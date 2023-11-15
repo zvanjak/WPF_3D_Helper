@@ -5,6 +5,8 @@ VisualStudioVersion = 17.7.34031.279
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WPF3DHelperLib", "WPF3DHelperLib\WPF3DHelperLib.csproj", "{9ED26F3A-6011-470E-BD25-1F072AA88BCE}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MathLibCSharp", "..\MathLibCSharp\MathLibCSharp\MathLibCSharp.csproj", "{79E88825-BED8-4C28-A764-B64631200FB8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{9ED26F3A-6011-470E-BD25-1F072AA88BCE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9ED26F3A-6011-470E-BD25-1F072AA88BCE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9ED26F3A-6011-470E-BD25-1F072AA88BCE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{79E88825-BED8-4C28-A764-B64631200FB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79E88825-BED8-4C28-A764-B64631200FB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79E88825-BED8-4C28-A764-B64631200FB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79E88825-BED8-4C28-A764-B64631200FB8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
