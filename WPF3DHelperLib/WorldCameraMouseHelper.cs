@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Media3D;
 
 namespace WPF3DHelperLib
@@ -27,6 +28,39 @@ namespace WPF3DHelperLib
     private Point _lastMousePos;
     private Point _startMouseRButtonClick;
 
+
+    public void InitCamera(Point3D inCameraPos)
+    {
+      _cameraPos = inCameraPos;
+
+      // Defines the camera used to view the 3D object. In order to view the 3D object,
+      // the camera must be positioned and pointed such that the object is within view
+      // of the camera.
+      _myCamera.Position = _cameraPos;
+      _myCamera.LookDirection = Utils.getFrom2Points(_cameraPos, _lookToPos);
+      _myCamera.UpDirection = new Vector3D(0, 0, 1);
+      _myCamera.FieldOfView = 60;
+    }
+
+    public void InitLights(Model3DGroup model3DGroup)
+    {
+      // Define the lights cast in the scene. Without light, the 3D object cannot
+      // be seen. Note: to illuminate an object from additional directions, create
+      // additional lights.
+      AmbientLight ambLight = new AmbientLight();
+      ambLight.Color = Colors.Yellow;
+      model3DGroup.Children.Add(ambLight);
+
+      DirectionalLight myDirectionalLight = new DirectionalLight();
+      myDirectionalLight.Color = Colors.White;
+      myDirectionalLight.Direction = new Vector3D(-0.61, -0.5, -0.61);
+      model3DGroup.Children.Add(myDirectionalLight);
+
+      DirectionalLight myDirectionalLight2 = new DirectionalLight();
+      myDirectionalLight2.Color = Colors.White;
+      myDirectionalLight2.Direction = new Vector3D(0.31, 0.2, -0.61);
+      model3DGroup.Children.Add(myDirectionalLight2);
+    }
 
     public void Window_MouseLeftButtonDown(Point mousePos)
     {
