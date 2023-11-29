@@ -441,6 +441,45 @@ namespace WPF3DHelperLib
       return mesh;
     }
 
+    public static MeshGeometry3D CreateSurface(Matrix data, double xMin, double xMax, double yMin, double yMax)
+    {
+      MeshGeometry3D mesh = new MeshGeometry3D();
+
+      int numRows = data.Rows;
+      int numCols = data.Cols;
+
+      // dodati točke
+      for (int i = 0; i < numRows; i++)
+      for (int j = 0; j < numCols; j++)
+      {
+          Point3D p = new Point3D(i, j, data.ElemAt(i, j));
+          mesh.Positions.Add(p);
+      }
+
+      // dodati triangle
+      for (int i = 0; i < numRows - 1; i++)
+      for (int j = 0; j < numCols - 1; j++)
+      {
+          int ind1 = i * numCols + j;
+          int ind2 = i * numCols + j + 1;
+          int ind3 = (i + 1) * numCols + j;
+
+          mesh.TriangleIndices.Add(ind1);
+          mesh.TriangleIndices.Add(ind2);
+          mesh.TriangleIndices.Add(ind3);
+
+          ind1 = i * numCols + j + 1;
+          ind2 = (i + 1) * numCols + j + 1;
+          ind3 = (i + 1) * numCols + j;
+
+          mesh.TriangleIndices.Add(ind1);
+          mesh.TriangleIndices.Add(ind2);
+          mesh.TriangleIndices.Add(ind3);
+        }
+
+      return mesh;
+    }
+    }
     public static MeshGeometry3D CreatePlane()
     {
       MeshGeometry3D mesh = new MeshGeometry3D();
