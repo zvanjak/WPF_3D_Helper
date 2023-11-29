@@ -456,7 +456,7 @@ namespace WPF3DHelperLib
         double y = scaleY * (yMin + j * (yMax - yMin) / data.Cols);
         double z = data.ElemAt(i, j);
 
-        Point3D p = new Point3D(i, j, data.ElemAt(i, j));
+        Point3D p = new Point3D(x, y, z);
         mesh.Positions.Add(p);
       }
 
