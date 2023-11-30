@@ -48,13 +48,13 @@ namespace WPF3DHelperLib
       // be seen. Note: to illuminate an object from additional directions, create
       // additional lights.
       AmbientLight ambLight = new AmbientLight();
-      ambLight.Color = Colors.White;
+      ambLight.Color = Colors.Gray;
       model3DGroup.Children.Add(ambLight);
 
-      DirectionalLight myDirectionalLight = new DirectionalLight();
-      myDirectionalLight.Color = Colors.LimeGreen;
-      myDirectionalLight.Direction = new Vector3D(-0.61, -0.5, -0.61);
-      model3DGroup.Children.Add(myDirectionalLight);
+      //DirectionalLight myDirectionalLight = new DirectionalLight();
+      //myDirectionalLight.Color = Colors.LimeGreen;
+      //myDirectionalLight.Direction = new Vector3D(-0.61, -0.5, -0.61);
+      //model3DGroup.Children.Add(myDirectionalLight);
 
       DirectionalLight myDirectionalLight2 = new DirectionalLight();
       myDirectionalLight2.Color = Colors.White;

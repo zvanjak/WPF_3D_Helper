@@ -472,9 +472,9 @@ namespace WPF3DHelperLib
           mesh.TriangleIndices.Add(ind3);
           mesh.TriangleIndices.Add(ind2);
 
-          mesh.TriangleIndices.Add(ind1);
-          mesh.TriangleIndices.Add(ind2);
-          mesh.TriangleIndices.Add(ind3);
+          //mesh.TriangleIndices.Add(ind1);
+          //mesh.TriangleIndices.Add(ind2);
+          //mesh.TriangleIndices.Add(ind3);
 
           ind1 = i * numCols + j + 1;
           ind2 = (i + 1) * numCols + j + 1;
@@ -484,9 +484,9 @@ namespace WPF3DHelperLib
           mesh.TriangleIndices.Add(ind3);
           mesh.TriangleIndices.Add(ind2);
 
-          mesh.TriangleIndices.Add(ind1);
-          mesh.TriangleIndices.Add(ind2);
-          mesh.TriangleIndices.Add(ind3);
+          //mesh.TriangleIndices.Add(ind1);
+          //mesh.TriangleIndices.Add(ind2);
+          //mesh.TriangleIndices.Add(ind3);
         }
 
       return mesh;
