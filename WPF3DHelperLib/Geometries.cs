@@ -487,7 +487,9 @@ namespace WPF3DHelperLib
           //mesh.TriangleIndices.Add(ind1);
           //mesh.TriangleIndices.Add(ind2);
           //mesh.TriangleIndices.Add(ind3);
-        }
+      }
+
+      // TODO - treba dodati i plohu s druge strane
 
       return mesh;
     }
