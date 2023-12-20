@@ -179,13 +179,15 @@ namespace WPF3DHelperLib
       MeshGeometry3D mesh = new MeshGeometry3D();
 
       // add base points
+      double totalHeight = height + topAdditionalHeight;
+      double dZ = totalHeight / 2;
       for (int i = 0; i < numBaseDivs; i++)
       {
         double angle = 2 * Math.PI * i / numBaseDivs;
         double x = baseRadius * Math.Cos(angle);
         double y = baseRadius * Math.Sin(angle);
 
-        Point3D p = new Point3D(x, y, 0);
+        Point3D p = new Point3D(x, y, 0 - dZ);
         mesh.Positions.Add(p);
       }
 
@@ -199,7 +201,7 @@ namespace WPF3DHelperLib
           double x = baseRadius * Math.Cos(angle);
           double y = baseRadius * Math.Sin(angle);
 
-          Point3D p = new Point3D(x, y, h * segmentHeight);
+          Point3D p = new Point3D(x, y, h * segmentHeight - dZ);
           mesh.Positions.Add(p);
         }
 
@@ -226,7 +228,7 @@ namespace WPF3DHelperLib
 
       // add base triangle
       // first, add center point on base 
-      Point3D pBase = new Point3D(0, 0, 0);
+      Point3D pBase = new Point3D(0, 0, 0 - dZ);
       mesh.Positions.Add(pBase);
 
       int baseCenterInd = (numHeightDivs + 1) * numBaseDivs;
@@ -244,7 +246,7 @@ namespace WPF3DHelperLib
       }
 
       // adding vector arrow
-      Point3D pTop = new Point3D(0, 0, height + topAdditionalHeight);
+      Point3D pTop = new Point3D(0, 0, height + topAdditionalHeight - dZ);
       mesh.Positions.Add(pTop);
       int topCenterInd = (numHeightDivs + 1) * numBaseDivs + 1;
 
@@ -256,7 +258,7 @@ namespace WPF3DHelperLib
         double x = (baseRadius + topAdditionalRadius) * Math.Cos(angle);
         double y = (baseRadius + topAdditionalRadius) * Math.Sin(angle);
 
-        Point3D p = new Point3D(x, y, height);
+        Point3D p = new Point3D(x, y, height - dZ);
         mesh.Positions.Add(p);
       }
 
