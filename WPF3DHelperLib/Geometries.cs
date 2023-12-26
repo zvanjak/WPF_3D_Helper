@@ -450,48 +450,76 @@ namespace WPF3DHelperLib
       int numRows = data.Rows;
       int numCols = data.Cols;
 
+      // TODO - provesti analizu z vrijednosti i odrediti da je ovo 0,1%
+
+      double dz = 0.01;
+
       // dodati točke
       for (int i = 0; i < numRows; i++)
-      for (int j = 0; j < numCols; j++)
-      {
-        double x = scaleX * (xMin + i * (xMax - xMin) / data.Rows);
-        double y = scaleY * (yMin + j * (yMax - yMin) / data.Cols);
-        double z = data.ElemAt(i, j);
+        for (int j = 0; j < numCols; j++)
+        {
+          double x = scaleX * (xMin + i * (xMax - xMin) / data.Rows);
+          double y = scaleY * (yMin + j * (yMax - yMin) / data.Cols);
+          double z = data.ElemAt(i, j);
 
-        Point3D p = new Point3D(x, y, z);
-        mesh.Positions.Add(p);
-      }
+          Point3D p = new Point3D(x, y, z + dz);
+          mesh.Positions.Add(p);
+        }
 
-      // dodati triangle
+      // točke za donju plohu
+      for (int i = 0; i < numRows; i++)
+        for (int j = 0; j < numCols; j++)
+        {
+          double x = scaleX * (xMin + i * (xMax - xMin) / data.Rows);
+          double y = scaleY * (yMin + j * (yMax - yMin) / data.Cols);
+          double z = data.ElemAt(i, j);
+
+          Point3D p = new Point3D(x, y, z - dz);
+          mesh.Positions.Add(p);
+        }
+
+      // dodati triangles za gornju plohu
       for (int i = 0; i < numRows - 1; i++)
-      for (int j = 0; j < numCols - 1; j++)
-      {
-          int ind1 = i * numCols + j;
-          int ind2 = i * numCols + j + 1;
-          int ind3 = (i + 1) * numCols + j;
+        for (int j = 0; j < numCols - 1; j++)
+        {
+            int ind1 = i * numCols + j;
+            int ind2 = i * numCols + j + 1;
+            int ind3 = (i + 1) * numCols + j;
 
-          mesh.TriangleIndices.Add(ind1);
-          mesh.TriangleIndices.Add(ind3);
-          mesh.TriangleIndices.Add(ind2);
+            mesh.TriangleIndices.Add(ind1);
+            mesh.TriangleIndices.Add(ind3);
+            mesh.TriangleIndices.Add(ind2);
 
-          //mesh.TriangleIndices.Add(ind1);
-          //mesh.TriangleIndices.Add(ind2);
-          //mesh.TriangleIndices.Add(ind3);
+            ind1 = i * numCols + j + 1;
+            ind2 = (i + 1) * numCols + j + 1;
+            ind3 = (i + 1) * numCols + j;
 
-          ind1 = i * numCols + j + 1;
-          ind2 = (i + 1) * numCols + j + 1;
-          ind3 = (i + 1) * numCols + j;
-
-          mesh.TriangleIndices.Add(ind1);
-          mesh.TriangleIndices.Add(ind3);
-          mesh.TriangleIndices.Add(ind2);
-
-          //mesh.TriangleIndices.Add(ind1);
-          //mesh.TriangleIndices.Add(ind2);
-          //mesh.TriangleIndices.Add(ind3);
-      }
+            mesh.TriangleIndices.Add(ind1);
+            mesh.TriangleIndices.Add(ind3);
+            mesh.TriangleIndices.Add(ind2);
+        }
 
       // TODO - treba dodati i plohu s druge strane
+      int startInd = numRows * numCols;
+      for (int i = 0; i < numRows - 1; i++)
+        for (int j = 0; j < numCols - 1; j++)
+        {
+          int ind1 = startInd + i * numCols + j;
+          int ind2 = startInd + i * numCols + j + 1;
+          int ind3 = startInd + (i + 1) * numCols + j;
+
+          mesh.TriangleIndices.Add(ind1);
+          mesh.TriangleIndices.Add(ind2);
+          mesh.TriangleIndices.Add(ind3);
+
+          ind1 = startInd + i * numCols + j + 1;
+          ind2 = startInd + (i + 1) * numCols + j + 1;
+          ind3 = startInd + (i + 1) * numCols + j;
+
+          mesh.TriangleIndices.Add(ind1);
+          mesh.TriangleIndices.Add(ind2);
+          mesh.TriangleIndices.Add(ind3);
+        }
 
       return mesh;
     }
