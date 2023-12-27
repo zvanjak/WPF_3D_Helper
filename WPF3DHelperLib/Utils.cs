@@ -19,7 +19,7 @@ namespace WPF3DHelperLib
     }
     public static void DrawCoordSystem(Model3DGroup modelGroup)
     {
-      double defAxisWidth = 0.5;
+      double defAxisWidth = 0.25;
       var axisMaterial = new DiffuseMaterial(new SolidColorBrush(Colors.DarkBlue));
 
       double axisLen = 300;
