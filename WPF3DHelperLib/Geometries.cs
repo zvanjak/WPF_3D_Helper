@@ -865,9 +865,9 @@ namespace WPF3DHelperLib
       startPnt = nextPnt;
       for (int h = 1; h <= numSegments; h++)
       {
-        T = tStart + (tEnd - tStart) * h / numSegments;
+        // T = tStart + (tEnd - tStart) * h / numSegments;
 
-        nextPnt = Func(T + dT);
+        nextPnt = points[h+1];
 
         normal = nextPnt - startPnt;
         v1 = normal / normal.Norm();
@@ -917,7 +917,7 @@ namespace WPF3DHelperLib
           //double newy = Vector3Cartesian.ScalProd(vec, n2);
           //double newz = Vector3Cartesian.ScalProd(vec, n1);
 
-          Point3D p = new Point3D(Func(T).X + newx, Func(T).Y + newy, Func(T).Z + newz);
+          Point3D p = new Point3D(points[h].X + newx, points[h].Y + newy, points[h].Z + newz);
 
 
           //double angle = 2 * Math.PI * i / numBaseDivs;
