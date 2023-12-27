@@ -624,8 +624,8 @@ namespace WPF3DHelperLib
     }
     public static Vector3Cartesian Func(double t)
     {
-      //      Vector3Cartesian ret = new Vector3Cartesian(5 * Math.Sin(t), 3 * t, 5 * Math.Cos(t));
-      Vector3Cartesian ret = new Vector3Cartesian(5 * t, 3 * t, 0.5 * t);
+      Vector3Cartesian ret = new Vector3Cartesian(5 * Math.Sin(t), 3 * t, 5 * Math.Cos(t));
+      // Vector3Cartesian ret = new Vector3Cartesian(5 * t, 3 * t, 0.5 * t);
       return ret;
     }
     public static Vector3Cartesian Func1(double t)
