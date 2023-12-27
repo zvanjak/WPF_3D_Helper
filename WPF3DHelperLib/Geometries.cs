@@ -863,7 +863,7 @@ namespace WPF3DHelperLib
       }
 
       startPnt = nextPnt;
-      for (int h = 1; h <= numSegments; h++)
+      for (int h = 1; h < numSegments; h++)
       {
         // T = tStart + (tEnd - tStart) * h / numSegments;
 
