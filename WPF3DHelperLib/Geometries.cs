@@ -793,6 +793,16 @@ namespace WPF3DHelperLib
       return mesh;
     }
 
+    public static MeshGeometry3D CreateSimpleLine(Vector3Cartesian point1, Vector3Cartesian point2, double baseRadius, int numBaseDivs)
+    {
+      List<Vector3Cartesian> points = new List<Vector3Cartesian>();
+      points.Add(point1);
+      points.Add(point2);
+
+      int numSegments = points.Count - 1;
+
+      return CreateLine2(points, baseRadius, numBaseDivs);
+    }
 
     public static MeshGeometry3D CreateLine2(List<Vector3Cartesian> points, double baseRadius, int numBaseDivs)
     {
