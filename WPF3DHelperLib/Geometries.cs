@@ -11,6 +11,86 @@ namespace WPF3DHelperLib
 {
   public class Geometries
   {
+
+    public static MeshGeometry3D CreateCube(Point3D inCenter, double length)
+    {
+      MeshGeometry3D mesh = new MeshGeometry3D();
+
+      Point3D p1 = new Point3D(inCenter.X - length / 2, inCenter.Y + length / 2, inCenter.Z + length / 2);
+      Point3D p2 = new Point3D(inCenter.X + length / 2, inCenter.Y + length / 2, inCenter.Z + length / 2);
+      Point3D p3 = new Point3D(inCenter.X + length / 2, inCenter.Y + length / 2, inCenter.Z - length / 2);
+      Point3D p4 = new Point3D(inCenter.X - length / 2, inCenter.Y + length / 2, inCenter.Z - length / 2);
+      Point3D p5 = new Point3D(inCenter.X - length / 2, inCenter.Y - length / 2, inCenter.Z + length / 2);
+      Point3D p6 = new Point3D(inCenter.X + length / 2, inCenter.Y - length / 2, inCenter.Z + length / 2);
+      Point3D p7 = new Point3D(inCenter.X + length / 2, inCenter.Y - length / 2, inCenter.Z - length / 2);
+      Point3D p8 = new Point3D(inCenter.X - length / 2, inCenter.Y - length / 2, inCenter.Z - length / 2);
+                       
+      mesh.Positions.Add(p1);
+      mesh.Positions.Add(p2);
+      mesh.Positions.Add(p3);
+      mesh.Positions.Add(p4);
+      mesh.Positions.Add(p5);
+      mesh.Positions.Add(p6);
+      mesh.Positions.Add(p7);
+      mesh.Positions.Add(p8);
+
+      // gornja ploha
+      mesh.TriangleIndices.Add(0);
+      mesh.TriangleIndices.Add(1);
+      mesh.TriangleIndices.Add(2);
+
+      mesh.TriangleIndices.Add(0);
+      mesh.TriangleIndices.Add(2);
+      mesh.TriangleIndices.Add(3);
+
+      // donja ploha
+      mesh.TriangleIndices.Add(4);
+      mesh.TriangleIndices.Add(6);
+      mesh.TriangleIndices.Add(5);
+
+      mesh.TriangleIndices.Add(4);
+      mesh.TriangleIndices.Add(7);
+      mesh.TriangleIndices.Add(6);
+
+      // srednja 1 ploha
+      mesh.TriangleIndices.Add(0);
+      mesh.TriangleIndices.Add(5);
+      mesh.TriangleIndices.Add(1);
+
+      mesh.TriangleIndices.Add(0);
+      mesh.TriangleIndices.Add(4);
+      mesh.TriangleIndices.Add(5);
+
+      // srednja 2 ploha
+      mesh.TriangleIndices.Add(1);
+      mesh.TriangleIndices.Add(5);
+      mesh.TriangleIndices.Add(6);
+
+      mesh.TriangleIndices.Add(1);
+      mesh.TriangleIndices.Add(6);
+      mesh.TriangleIndices.Add(2);
+
+      // srednja 3 ploha
+      mesh.TriangleIndices.Add(2);
+      mesh.TriangleIndices.Add(6);
+      mesh.TriangleIndices.Add(7);
+
+      mesh.TriangleIndices.Add(2);
+      mesh.TriangleIndices.Add(7);
+      mesh.TriangleIndices.Add(3);
+
+      // srednja 4 ploha
+      mesh.TriangleIndices.Add(3);
+      mesh.TriangleIndices.Add(7);
+      mesh.TriangleIndices.Add(4);
+
+      mesh.TriangleIndices.Add(3);
+      mesh.TriangleIndices.Add(4);
+      mesh.TriangleIndices.Add(0);
+
+      return mesh;
+    }
+
     public static MeshGeometry3D CreateParallelepiped(Point3D inCenter, double lengthX, double lengthY, double lengthZ)
     {
       MeshGeometry3D mesh = new MeshGeometry3D();
@@ -801,10 +881,10 @@ namespace WPF3DHelperLib
 
       int numSegments = points.Count - 1;
 
-      return CreateLine2(points, baseRadius, numBaseDivs);
+      return CreatePolyLine(points, baseRadius, numBaseDivs);
     }
 
-    public static MeshGeometry3D CreateLine2(List<Vector3Cartesian> points, double baseRadius, int numBaseDivs)
+    public static MeshGeometry3D CreatePolyLine(List<Vector3Cartesian> points, double baseRadius, int numBaseDivs)
     {
       int numSegments = points.Count - 1;
       // funkcija je f(t) = sin(t), cos(t), t
