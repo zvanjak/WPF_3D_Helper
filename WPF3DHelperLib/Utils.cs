@@ -19,10 +19,10 @@ namespace WPF3DHelperLib
     }
     public static void DrawCoordSystem(Model3DGroup modelGroup)
     {
-      double defAxisWidth = 0.25;
+      double defAxisWidth = 0.5;
       var axisMaterial = new DiffuseMaterial(new SolidColorBrush(Colors.DarkBlue));
 
-      double axisLen = 300;
+      double axisLen = 500;
 
       MeshGeometry3D axisX = Geometries.CreateParallelepiped(new Point3D(0, 0, 0), axisLen, defAxisWidth, defAxisWidth);
       GeometryModel3D axisXModel = new GeometryModel3D(axisX, axisMaterial);
