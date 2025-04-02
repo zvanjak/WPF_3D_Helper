@@ -7,12 +7,12 @@ using MML;
 
 namespace MML_VectorFieldVisualizer
 {
-  public class VecRepr
+  public class Vector3Repr
   {
     public Vector3Cartesian Pos;
     public Vector3Cartesian Vec;
 
-    public VecRepr(Vector3Cartesian pos, Vector3Cartesian vec)
+    public Vector3Repr(Vector3Cartesian pos, Vector3Cartesian vec)
     {
       Pos = pos;
       Vec = vec;
