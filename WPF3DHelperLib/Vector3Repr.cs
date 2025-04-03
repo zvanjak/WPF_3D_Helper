@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using MML;
 
-namespace MML_VectorFieldVisualizer
+namespace MML_VectorField3D_Visualizer
 {
   public class Vector3Repr
   {
