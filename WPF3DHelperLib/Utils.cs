@@ -35,22 +35,19 @@ namespace WPF3DHelperLib
       ret.Normalize();
       return ret;
     }
-    public static void DrawCoordSystem(Model3DGroup modelGroup)
+    public static void DrawCoordSystem(Model3DGroup modelGroup, double axisWidth, double axisLen)
     {
-      double defAxisWidth = 0.5;
       var axisMaterial = new DiffuseMaterial(new SolidColorBrush(Colors.DarkBlue));
 
-      double axisLen = 500;
-
-      MeshGeometry3D axisX = Geometries.CreateParallelepiped(new Point3D(0, 0, 0), axisLen, defAxisWidth, defAxisWidth);
+      MeshGeometry3D axisX = Geometries.CreateParallelepiped(new Point3D(0, 0, 0), axisLen, axisWidth, axisWidth);
       GeometryModel3D axisXModel = new GeometryModel3D(axisX, axisMaterial);
       modelGroup.Children.Add(axisXModel);
 
-      MeshGeometry3D axisY = Geometries.CreateParallelepiped(new Point3D(0, 0, 0), defAxisWidth, axisLen, defAxisWidth);
+      MeshGeometry3D axisY = Geometries.CreateParallelepiped(new Point3D(0, 0, 0), axisWidth, axisLen, axisWidth);
       GeometryModel3D axisYModel = new GeometryModel3D(axisY, axisMaterial);
       modelGroup.Children.Add(axisYModel);
 
-      MeshGeometry3D axisZ = Geometries.CreateParallelepiped(new Point3D(0, 0, 0), defAxisWidth, defAxisWidth, axisLen);
+      MeshGeometry3D axisZ = Geometries.CreateParallelepiped(new Point3D(0, 0, 0), axisWidth, axisWidth, axisLen);
       GeometryModel3D axisZModel = new GeometryModel3D(axisZ, axisMaterial);
       modelGroup.Children.Add(axisZModel);
     }
