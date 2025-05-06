@@ -1,5 +1,6 @@
 ﻿using MML;
 using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -44,9 +45,6 @@ namespace WPF3DHelperLib
 
     public void InitLights(Model3DGroup model3DGroup)
     {
-      // Define the lights cast in the scene. Without light, the 3D object cannot
-      // be seen. Note: to illuminate an object from additional directions, create
-      // additional lights.
       AmbientLight ambLight = new AmbientLight();
       ambLight.Color = Colors.Gray;
       model3DGroup.Children.Add(ambLight);
@@ -96,10 +94,24 @@ namespace WPF3DHelperLib
         var diffX = (newPos.X - _lastMousePos.X) / 100.0;
         var diffY = (newPos.Y - _lastMousePos.Y) / 100.0;
 
+        double alpha = Math.Atan2(_cameraPos.Y - _lookToPos.Y, _cameraPos.X - _lookToPos.X);
+        var dxx = diffX * Math.Sin(alpha);
+        var dxy = diffX * Math.Cos(alpha);
+        var dyx = diffY * Math.Cos(alpha);
+        var dyy = diffY * Math.Sin(alpha);
+
+        var dx = dxx + dyx;
+        var dy = dxy + dyy;
+
+
+        Debug.WriteLine("Alpha {0}", alpha * 180 / Math.PI);
+        Debug.WriteLine("Diff {0}, {1}", diffX, diffY);
+        Debug.WriteLine("Diff2 {0}, {1}", dx, dy);
+
         // uzeti smjer gledanja kao normalu, i kreirati horizontalni x-y koord sustav
         // koji određuje koliki su u stvari dx i dy
-        _cameraPos = new Point3D(_cameraPos.X + diffX, _cameraPos.Y - diffY, _cameraPos.Z);
-        _lookToPos = new Point3D(_lookToPos.X + diffX, _lookToPos.Y - diffY, _lookToPos.Z);
+        _cameraPos = new Point3D(_cameraPos.X + dx, _cameraPos.Y - dy, _cameraPos.Z);
+        _lookToPos = new Point3D(_lookToPos.X + dx, _lookToPos.Y - dy, _lookToPos.Z);
 
         _myCamera.Position = _cameraPos;
 
@@ -112,13 +124,13 @@ namespace WPF3DHelperLib
         double diffX = mousePos.X - _startMouseRButtonClick.X;
         double diffY = mousePos.Y - _startMouseRButtonClick.Y;
 
-        Debug.WriteLine("Diff {0} - {1}", diffX, diffY);
+        Debug.WriteLine("Diff {0}, {1}", diffX, diffY);
 
         // znači, moramo zarotirati točku kamere, OKO točke gledanja
         double angleX = diffX / 5.0 * Math.PI / 180.0;
         double angleY = diffY / 5.0 * Math.PI / 180.0;
 
-        Debug.WriteLine("Angle {0} - {1}", angleX, angleY);
+        Debug.WriteLine("Angle {0}, {1}", angleX, angleY);
 
         // treba oduzeti _lookAtPos, da translatiramo origin
         Point3D cam = _startCameraPosRButtonClick;
@@ -149,7 +161,7 @@ namespace WPF3DHelperLib
 
         _myCamera.Position = _cameraPos;
 
-        Debug.WriteLine("{0}  Elevation - {1}", _cameraPos.ToString(), outPnt.Theta);
+        Debug.WriteLine("Camera pos - {0}  Theta - {1}", _cameraPos.ToString(), outPnt.Theta);
 
         // treba ažurirati i LookDirection!!!
         _myCamera.LookDirection = Utils.getFrom2Points(_cameraPos, _lookToPos);
