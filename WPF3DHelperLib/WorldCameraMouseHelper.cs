@@ -172,6 +172,7 @@ namespace WPF3DHelperLib
 
     public void Window_MouseWheel(Viewport3D myViewport3D, object sender, MouseWheelEventArgs e)
     {
+      // TODO _ mijenja point of view širinu prozora, odnosno angle!
       // mijenjamo poziciju kamere da se ili približi ili udalji od točke u koju gledamo
       Vector3D dir = Utils.getFrom2Points(_cameraPos, _lookToPos);
 
