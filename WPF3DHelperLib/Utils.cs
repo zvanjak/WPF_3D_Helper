@@ -80,14 +80,16 @@ namespace WPF3DHelperLib
       yAxis.Y2 = coordSysParams._windowHeight;
       mainCanvas.Children.Add(yAxis);
 
-      int numXTicks = (int)(xMax - xMin);
-      for (int i = -numXTicks; i <= numXTicks; i++)
+      int numXTicks = 10; //(int)((xMax - xMin) * coordSysParams._scaleX);
+      double dx = coordSysParams._xMax;
+      int delta = (int)(dx / numXTicks);
+      for (int i = 0; i <= numXTicks; i++)
       {
         Line xTick = new Line();
         xTick.Stroke = Brushes.Black;
-        xTick.X1 = coordSysParams._centerX + i * coordSysParams._scaleX;
+        xTick.X1 = coordSysParams._centerX + i * delta;
         xTick.Y1 = coordSysParams._centerY - 2;
-        xTick.X2 = coordSysParams._centerX + i * coordSysParams._scaleX;
+        xTick.X2 = coordSysParams._centerX + i * delta;
         xTick.Y2 = coordSysParams._centerY + 2;
         mainCanvas.Children.Add(xTick);
       }
@@ -97,9 +99,9 @@ namespace WPF3DHelperLib
         Line xTick = new Line();
         xTick.Stroke = Brushes.Black;
         xTick.X1 = coordSysParams._centerX - 2;
-        xTick.Y1 = coordSysParams._centerY - i * coordSysParams._scaleX;
+        xTick.Y1 = coordSysParams._centerY - i * coordSysParams._scaleY;
         xTick.X2 = coordSysParams._centerX + 2;
-        xTick.Y2 = coordSysParams._centerY - i * coordSysParams._scaleX;
+        xTick.Y2 = coordSysParams._centerY - i * coordSysParams._scaleY;
         mainCanvas.Children.Add(xTick);
       }
 
