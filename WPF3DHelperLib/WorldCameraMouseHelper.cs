@@ -43,6 +43,14 @@ namespace WPF3DHelperLib
       _myCamera.FieldOfView = 60;
     }
 
+    public void InitLookAtPoint(Point3D inLookAtPnt)
+    {
+      _lookToPos = inLookAtPnt;
+      _myCamera.LookDirection = Utils.getFrom2Points(_cameraPos, _lookToPos);
+      _myCamera.UpDirection = new Vector3D(0, 0, 1);
+      _myCamera.FieldOfView = 60;
+    }
+
     public void InitLights(Model3DGroup model3DGroup)
     {
       AmbientLight ambLight = new AmbientLight();
@@ -83,7 +91,6 @@ namespace WPF3DHelperLib
     {
       _bRightButtonDown = false;
     }
-
 
     public void Window_MouseMove(Viewport3D myViewport3D, Point mousePos, object sender, MouseEventArgs e)
     {
