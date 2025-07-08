@@ -382,8 +382,8 @@ namespace WPF3DHelperLib
     {
       MeshGeometry3D mesh = new MeshGeometry3D();
 
-      int N = 6;
-      int M = 6;    // koliko stripova po paralelama imamo
+      int N = 10;
+      int M = 10;    // koliko stripova po paralelama imamo
 
       double angleLatitudeStep = 2 * Math.PI / N;
       double angleLongitudeStep = Math.PI / M;
