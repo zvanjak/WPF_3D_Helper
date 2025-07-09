@@ -189,5 +189,10 @@ namespace WPF3DHelperLib
 
       myViewport3D.InvalidateVisual();
     }
+
+    public void Window_KeyDown(object sender, KeyEventArgs e)
+    {
+
+    }
   }
 }
