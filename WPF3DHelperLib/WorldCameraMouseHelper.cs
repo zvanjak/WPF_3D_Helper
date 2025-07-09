@@ -192,7 +192,47 @@ namespace WPF3DHelperLib
 
     public void Window_KeyDown(object sender, KeyEventArgs e)
     {
+      // Camera movement step size
+      double step = 20.0;
 
+      // Get current camera position and look-at point
+      //var cam = _myCamera;
+      var pos = _myCamera.Position;
+      var look = _lookToPos;
+
+      // Calculate forward and right vectors
+      Vector3D forward = _myCamera.LookDirection;
+      forward.Normalize();
+      Vector3D right = Vector3D.CrossProduct(forward, new Vector3D(0, 0, 1));
+      right.Normalize();
+
+      // Move camera based on key
+      switch (e.Key)
+      {
+        case Key.W: // Forward
+          pos += forward * step;
+          look += forward * step;
+          break;
+        case Key.S: // Backward
+          pos -= forward * step;
+          look -= forward * step;
+          break;
+        case Key.A: // Left
+          pos -= right * step;
+          look -= right * step;
+          break;
+        case Key.D: // Right
+          pos += right * step;
+          look += right * step;
+          break;
+        default:
+          return;
+      }
+
+      // Update camera position and look-at
+      _myCamera.Position = pos;
+      _lookToPos = look;
+      _myCamera.LookDirection = look - pos;
     }
   }
 }
