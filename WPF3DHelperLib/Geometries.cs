@@ -906,7 +906,10 @@ namespace WPF3DHelperLib
       if (Math.Abs(normal.X) > Math.Abs(normal.Y) && Math.Abs(normal.X) > Math.Abs(normal.Z))
       {
         v2 = new Vector3Cartesian(0, 1 * Math.Sign(normal.Y), 0);
-        v3 = new Vector3Cartesian(0, 0, 1 * Math.Sign(normal.Z));
+        if( normal.Z == 0)
+          v3 = new Vector3Cartesian(0, 0, 1);
+        else
+          v3 = new Vector3Cartesian(0, 0, 1 * Math.Sign(normal.Z));
       }
       else if (Math.Abs(normal.Y) > Math.Abs(normal.X) && Math.Abs(normal.Y) > Math.Abs(normal.Z))
       {
