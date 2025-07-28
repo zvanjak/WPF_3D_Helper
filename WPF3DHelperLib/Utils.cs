@@ -111,6 +111,11 @@ namespace WPF3DHelperLib
 
       }
 
+      // what we need is
+      // ystart = Math.Floor(yMin / nextRounded) * nextRounded;
+      // delta and num Ticks
+
+
       int numYTicks = 10;
       double dy = (coordSysParams._yMax - coordSysParams._yMin) * coordSysParams._scaleY;
       delta = (int)(dy / numYTicks);
