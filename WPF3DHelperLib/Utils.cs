@@ -80,8 +80,8 @@ namespace WPF3DHelperLib
       yAxis.Y2 = coordSysParams._windowHeight;
       mainCanvas.Children.Add(yAxis);
 
-      int numXTicks = 10; //(int)((xMax - xMin) * coordSysParams._scaleX);
-      double dx = coordSysParams._xMax;
+      int numXTicks = 10; 
+      double dx = (coordSysParams._xMax - coordSysParams._xMin ) * coordSysParams._scaleX;
       int delta = (int)(dx / numXTicks);
       for (int i = 0; i <= numXTicks; i++)
       {
@@ -94,16 +94,37 @@ namespace WPF3DHelperLib
         mainCanvas.Children.Add(xTick);
       }
 
-      for (int i = -8; i <= 8; i++)
+      // based on yMax and yMin, we want to calculate optimal positions for ticks on y-axis
+      // we want them to be rounded numbers, so we will use a simple approach
+      double yRange = coordSysParams._yMax - coordSysParams._yMin;
+      double yRangeAbs = Math.Abs(yRange);
+
+      int logOrder = (int)Math.Floor(Math.Log10(yRangeAbs));
+
+      int nextSigDigit = (int) Math.Ceiling(yRangeAbs / Math.Pow(10, logOrder));
+
+      double nextRounded = Math.Ceiling(yRangeAbs / Math.Pow(10, logOrder)) * Math.Pow(10, logOrder);
+
+      double percent = 100 * yRangeAbs / Math.Pow(10, logOrder+1);
+      if( percent < 50 )
       {
-        Line xTick = new Line();
-        xTick.Stroke = Brushes.Black;
-        xTick.X1 = coordSysParams._centerX - 2;
-        xTick.Y1 = coordSysParams._centerY - i * coordSysParams._scaleY;
-        xTick.X2 = coordSysParams._centerX + 2;
-        xTick.Y2 = coordSysParams._centerY - i * coordSysParams._scaleY;
-        mainCanvas.Children.Add(xTick);
+
       }
+
+      int numYTicks = 10;
+      double dy = (coordSysParams._yMax - coordSysParams._yMin) * coordSysParams._scaleY;
+      delta = (int)(dy / numYTicks);
+      for (int i = 0; i <= numYTicks; i++)
+      {
+        Line yTick = new Line();
+        yTick.Stroke = Brushes.Black;
+        yTick.X1 = coordSysParams._centerX - 2;
+        yTick.Y1 = coordSysParams._centerY - i * delta;
+        yTick.X2 = coordSysParams._centerX + 2;
+        yTick.Y2 = coordSysParams._centerY - i * delta;
+        mainCanvas.Children.Add(yTick);
+      }
+
 
       TextBlock xMinText = new TextBlock();
       xMinText.Text = xMin.ToString();
