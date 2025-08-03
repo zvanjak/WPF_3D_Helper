@@ -11,7 +11,6 @@ namespace WPF3DHelperLib
 {
   public class Geometries
   {
-
     public static MeshGeometry3D CreateCube(Point3D inCenter, double length)
     {
       MeshGeometry3D mesh = new MeshGeometry3D();
