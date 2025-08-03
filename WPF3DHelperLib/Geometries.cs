@@ -170,7 +170,7 @@ namespace WPF3DHelperLib
       return mesh;
     }
 
-    public static MeshGeometry3D CreateValjak(double baseRadius, double height, int numBaseDivs, int numHeightDivs)
+    public static MeshGeometry3D CreateCylinder(double baseRadius, double height, int numBaseDivs, int numHeightDivs)
     {
       MeshGeometry3D mesh = new MeshGeometry3D();
 
