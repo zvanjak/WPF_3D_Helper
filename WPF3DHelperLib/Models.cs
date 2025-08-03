@@ -9,7 +9,7 @@ using System.Windows.Media.Media3D;
 
 namespace WPF3DHelperLib
 {
-  class WorldModel
+  public class WorldModel
   {
     public double OriginX { get; set; } = 0;
     public double OriginY { get; set; } = 0;
@@ -17,9 +17,20 @@ namespace WPF3DHelperLib
 
     public List<CubeModelDTO> Cubes { get; set; } = new List<CubeModelDTO>();
 
-    private List<CubeModel> listCubes { get; set; } = new List<CubeModel>();
+    private List<CubeModel> listCubeModels { get; set; } = new List<CubeModel>();
 
-    void SaveToJSON(string fileName)
+    public void AddCube(CubeModel inCube)
+    {
+      if (inCube == null) 
+        throw new ArgumentNullException(nameof(inCube), "Cube cannot be null.");
+
+      listCubeModels.Add(inCube);
+
+      CubeModelDTO dto = new CubeModelDTO(inCube);
+      Cubes.Add(dto);
+    }
+
+    public void SaveToJSON(string fileName)
     {
       var options = new System.Text.Json.JsonSerializerOptions
       {
@@ -29,6 +40,22 @@ namespace WPF3DHelperLib
       string json = System.Text.Json.JsonSerializer.Serialize(this, options);
       System.IO.File.WriteAllText(fileName, json);
     }
+    public static WorldModel LoadFromJSON(string fileName)
+    {
+      string json = System.IO.File.ReadAllText(fileName);
+      var options = new System.Text.Json.JsonSerializerOptions
+      {
+        IncludeFields = true
+      };
+      var result = System.Text.Json.JsonSerializer.Deserialize<WorldModel>(json, options);
+      if (result == null)
+        throw new InvalidOperationException("Deserialization returned null.");
+
+      // if we are good, we need to convert CubeModelDTO to CubeModel
+      result.listCubeModels = result.Cubes.Select(dto => dto.ToCubeModel()).ToList();
+
+      return result;
+    }
   }
 
   public class CubeModel
@@ -36,6 +63,19 @@ namespace WPF3DHelperLib
     public Point3D Center { get; set; }
     public double SideLength { get; set; }
     public Color Color { get; set; }
+
+    public CubeModel()
+    {
+      Center = new Point3D(0, 0, 0);
+      SideLength = 1;
+      Color = Color.FromArgb(255, 255, 0, 0); // Default to red
+    }
+    public CubeModel(Point3D center, double sideLength, System.Windows.Media.Color color)
+    {
+      Center = center;
+      SideLength = sideLength;
+      Color = System.Drawing.Color.FromArgb(color.A, color.R, color.G, color.B);
+    }
   }
   public class CubeModelDTO
   {
@@ -43,18 +83,23 @@ namespace WPF3DHelperLib
     public double CenterY { get; set; }
     public double CenterZ { get; set; }
     public double SideLength { get; set; }
-    public Color Color { get; set; }
+    public int ColorA { get; set; }
+    public int ColorR { get; set; }
+    public int ColorG { get; set; }
+    public int ColorB { get; set; }
 
-    public static CubeModelDTO FromCubeModel(CubeModel model)
+    public CubeModelDTO() { }
+
+    public CubeModelDTO(CubeModel model)
     {
-      return new CubeModelDTO
-      {
-        CenterX = model.Center.X,
-        CenterY = model.Center.Y,
-        CenterZ = model.Center.Z,
-        SideLength = model.SideLength,
-        Color = Color.FromArgb(model.Color.A, model.Color.R, model.Color.G, model.Color.B)
-      };
+      CenterX = model.Center.X;
+      CenterY = model.Center.Y;
+      CenterZ = model.Center.Z;
+      SideLength = model.SideLength;
+      ColorA = model.Color.A;
+      ColorR = model.Color.R;
+      ColorG = model.Color.G;
+      ColorB = model.Color.B;
     }
     public CubeModel ToCubeModel()
     {
@@ -62,7 +107,7 @@ namespace WPF3DHelperLib
       {
         Center = new Point3D(CenterX, CenterY, CenterZ),
         SideLength = SideLength,
-        Color = Color.FromArgb(Color.A, Color.R, Color.G, Color.B)
+        Color = System.Drawing.Color.FromArgb(ColorA, ColorR, ColorG, ColorB)
       };
     }
   }

@@ -21,7 +21,11 @@ namespace WPF3DHelperLib
       get => _pos;
       set => _pos = value;
     }
-    public GeometryModel3D RefGeomModel { get => _refGeomModel; set => _refGeomModel = value; }
+    public GeometryModel3D? RefGeomModel
+    {
+      get => _refGeomModel;
+      set => _refGeomModel = value;
+    }
 
     public double X
     {

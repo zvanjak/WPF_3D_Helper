@@ -10,9 +10,16 @@ using System.Windows.Media.Media3D;
 
 namespace WPF3DHelperLib
 {
- 
   public class Geometries
   {
+    public static MeshGeometry3D CreateCube(CubeModel cubeModel)
+    {
+      return CreateCube(cubeModel.Center, cubeModel.SideLength);
+    }
+    public static MeshGeometry3D CreateCube(double length)
+    {
+      return CreateCube(new Point3D(0, 0, 0), length);
+    }
     public static MeshGeometry3D CreateCube(Point3D inCenter, double length)
     {
       MeshGeometry3D mesh = new MeshGeometry3D();
