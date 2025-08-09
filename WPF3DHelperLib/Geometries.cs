@@ -983,22 +983,53 @@ namespace WPF3DHelperLib
         normal = nextPnt - startPnt;
         v1 = normal / normal.Norm();
 
+        //if (Math.Abs(normal.X) > Math.Abs(normal.Y) && Math.Abs(normal.X) > Math.Abs(normal.Z))
+        //{
+        //  v2 = new Vector3Cartesian(0, 1 * Math.Sign(normal.Y), 0);
+        //  v3 = new Vector3Cartesian(0, 0, 1 * Math.Sign(normal.Z));
+        //}
+        //else if (Math.Abs(normal.Y) > Math.Abs(normal.X) && Math.Abs(normal.Y) > Math.Abs(normal.Z))
+        //{
+        //  v2 = new Vector3Cartesian(1 * Math.Sign(normal.Y), 0, 0);
+        //  v3 = new Vector3Cartesian(0, 0, 1 * Math.Sign(normal.Z));
+        //}
+        //else
+        //{
+        //  v2 = new Vector3Cartesian(1 * Math.Sign(normal.Y), 0, 0);
+        //  v3 = new Vector3Cartesian(0, 1 * Math.Sign(normal.Z), 0);
+        //}
+
         if (Math.Abs(normal.X) > Math.Abs(normal.Y) && Math.Abs(normal.X) > Math.Abs(normal.Z))
         {
-          v2 = new Vector3Cartesian(0, 1 * Math.Sign(normal.Y), 0);
-          v3 = new Vector3Cartesian(0, 0, 1 * Math.Sign(normal.Z));
+          v2 = normal.Y == 0
+            ? new Vector3Cartesian(0, 1, 0)
+            : new Vector3Cartesian(0, 1 * Math.Sign(normal.Y), 0);
+
+          v3 = normal.Z == 0
+            ? new Vector3Cartesian(0, 0, 1)
+            : new Vector3Cartesian(0, 0, 1 * Math.Sign(normal.Z));
         }
         else if (Math.Abs(normal.Y) > Math.Abs(normal.X) && Math.Abs(normal.Y) > Math.Abs(normal.Z))
         {
-          v2 = new Vector3Cartesian(1 * Math.Sign(normal.Y), 0, 0);
-          v3 = new Vector3Cartesian(0, 0, 1 * Math.Sign(normal.Z));
+          v2 = normal.X == 0
+            ? new Vector3Cartesian(1, 0, 0)
+            : new Vector3Cartesian(1 * Math.Sign(normal.X), 0, 0);
+
+          v3 = normal.Z == 0
+            ? new Vector3Cartesian(0, 0, 1)
+            : new Vector3Cartesian(0, 0, 1 * Math.Sign(normal.Z));
         }
         else
         {
-          v2 = new Vector3Cartesian(1 * Math.Sign(normal.Y), 0, 0);
-          v3 = new Vector3Cartesian(0, 1 * Math.Sign(normal.Z), 0);
-        }
+          v2 = normal.X == 0
+            ? new Vector3Cartesian(1, 0, 0)
+            : new Vector3Cartesian(1 * Math.Sign(normal.X), 0, 0);
 
+          v3 = normal.Y == 0
+            ? new Vector3Cartesian(0, 1, 0)
+            : new Vector3Cartesian(0, 1 * Math.Sign(normal.Y), 0);
+        }
+        
         // sad ortonormalizirati v1 i v2 prema normali
         n1 = v1;
         cn2 = v2 - Vector3Cartesian.ScalProd(v2, n1) * n1;
