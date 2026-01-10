@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
 using System.Windows.Shapes;
 
@@ -251,6 +253,74 @@ namespace WPF3DHelperLib
       mainCanvas.Children.Add(yMaxText);
       Canvas.SetLeft(yMaxText, coordSysParams._centerX - 20);
       Canvas.SetTop(yMaxText, coordSysParams._centerY - yMax * coordSysParams._scaleY - 2.5);
+    }
+
+    /// <summary>
+    /// Exports a Viewport3D to an image file. Supports PNG, JPEG, and BMP formats.
+    /// </summary>
+    /// <param name="viewport">The Viewport3D to export.</param>
+    /// <param name="filePath">The file path to save the image to.</param>
+    /// <param name="customWidth">Optional custom width in pixels.</param>
+    /// <param name="customHeight">Optional custom height in pixels.</param>
+    /// <param name="dpi">DPI for the output image (default 96).</param>
+    public static void ExportViewportToImage(Viewport3D viewport, string filePath, int? customWidth = null, int? customHeight = null, double dpi = 96)
+    {
+      if (viewport == null) throw new ArgumentNullException(nameof(viewport));
+
+      // Use viewport actual size or custom size
+      int pixelWidth = customWidth ?? (int)viewport.ActualWidth;
+      int pixelHeight = customHeight ?? (int)viewport.ActualHeight;
+
+      if (pixelWidth <= 0 || pixelHeight <= 0)
+      {
+        pixelWidth = 1920;
+        pixelHeight = 1080;
+      }
+
+      // Create a DrawingVisual with background and viewport content
+      // Do NOT call Measure/Arrange/UpdateLayout on the viewport - it disrupts its layout in parent
+      var drawingVisual = new DrawingVisual();
+      using (var dc = drawingVisual.RenderOpen())
+      {
+        // Draw white background
+        dc.DrawRectangle(Brushes.White, null, new System.Windows.Rect(0, 0, pixelWidth, pixelHeight));
+
+        // Paint the viewport using a VisualBrush
+        var visualBrush = new VisualBrush(viewport)
+        {
+          Stretch = Stretch.Uniform
+        };
+        dc.DrawRectangle(visualBrush, null, new System.Windows.Rect(0, 0, pixelWidth, pixelHeight));
+      }
+
+      // Render to bitmap
+      var renderBitmap = new RenderTargetBitmap(pixelWidth, pixelHeight, dpi, dpi, PixelFormats.Pbgra32);
+      renderBitmap.Render(drawingVisual);
+
+      // Determine encoder based on file extension
+      BitmapEncoder encoder;
+      string extension = System.IO.Path.GetExtension(filePath).ToLowerInvariant();
+      switch (extension)
+      {
+        case ".jpg":
+        case ".jpeg":
+          encoder = new JpegBitmapEncoder { QualityLevel = 95 };
+          break;
+        case ".bmp":
+          encoder = new BmpBitmapEncoder();
+          break;
+        case ".png":
+        default:
+          encoder = new PngBitmapEncoder();
+          break;
+      }
+
+      encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
+
+      using (var stream = File.Create(filePath))
+      {
+        encoder.Save(stream);
+      }
     }
   }
 }
