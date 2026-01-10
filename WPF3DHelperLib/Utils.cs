@@ -8,6 +8,8 @@ using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using System.Windows.Shapes;
 
+using MML;
+
 namespace WPF3DHelperLib
 {
   public class CoordSystemParams
@@ -35,22 +37,117 @@ namespace WPF3DHelperLib
       ret.Normalize();
       return ret;
     }
-    public static void DrawCoordSystem(Model3DGroup modelGroup, double axisWidth, double axisLen)
-    {
-      var axisMaterial = new DiffuseMaterial(new SolidColorBrush(Colors.DarkBlue));
 
-      MeshGeometry3D axisX = Geometries.CreateParallelepiped(new Point3D(0, 0, 0), axisLen, axisWidth, axisWidth);
-      GeometryModel3D axisXModel = new GeometryModel3D(axisX, axisMaterial);
+    /// <summary>
+    /// Draws a 3D coordinate system with cylindrical axes and arrow tips.
+    /// </summary>
+    /// <param name="modelGroup">The model group to add the axes to.</param>
+    /// <param name="axisRadius">The radius of the axis cylinders.</param>
+    /// <param name="axisLen">The length of each axis (from -axisLen/2 to +axisLen/2).</param>
+    public static void DrawCoordSystem(Model3DGroup modelGroup, double axisRadius, double axisLen)
+    {
+      // Use different colors for each axis for better visualization
+      var xAxisMaterial = new DiffuseMaterial(new SolidColorBrush(Colors.DarkRed));
+      var yAxisMaterial = new DiffuseMaterial(new SolidColorBrush(Colors.DarkGreen));
+      var zAxisMaterial = new DiffuseMaterial(new SolidColorBrush(Colors.DarkBlue));
+
+      int numSegments = 12; // Number of segments around the cylinder circumference
+
+      // Arrow parameters (50% smaller)
+      double arrowHeadRadius = axisRadius * 2;
+      double arrowHeadLength = axisLen * 0.03;
+
+      // Half length for centering axes at origin
+      double halfLen = axisLen / 2.0;
+
+      // === Z Axis (already aligned with cylinder default orientation) ===
+      MeshGeometry3D axisZ = Geometries.CreateCylinder(axisRadius, axisLen, numSegments, 1);
+      GeometryModel3D axisZModel = new GeometryModel3D(axisZ, zAxisMaterial);
+      // Translate so it's centered at origin (cylinder starts at z=0, we want it from -halfLen to +halfLen)
+      axisZModel.Transform = new TranslateTransform3D(0, 0, -halfLen);
+      modelGroup.Children.Add(axisZModel);
+
+      // Z axis arrows (both ends)
+      AddAxisArrow(modelGroup, new Point3D(0, 0, halfLen), new Vector3D(0, 0, 1), 
+                   arrowHeadRadius, arrowHeadLength, zAxisMaterial);
+      AddAxisArrow(modelGroup, new Point3D(0, 0, -halfLen), new Vector3D(0, 0, -1), 
+                   arrowHeadRadius, arrowHeadLength, zAxisMaterial);
+
+      // === X Axis (rotate Z-aligned cylinder to X direction) ===
+      MeshGeometry3D axisX = Geometries.CreateCylinder(axisRadius, axisLen, numSegments, 1);
+      GeometryModel3D axisXModel = new GeometryModel3D(axisX, xAxisMaterial);
+      // Rotate 90 degrees around Y axis to align with X, then translate to center
+      var xTransformGroup = new Transform3DGroup();
+      xTransformGroup.Children.Add(new RotateTransform3D(new AxisAngleRotation3D(new Vector3D(0, 1, 0), 90)));
+      xTransformGroup.Children.Add(new TranslateTransform3D(-halfLen, 0, 0));
+      axisXModel.Transform = xTransformGroup;
       modelGroup.Children.Add(axisXModel);
 
-      MeshGeometry3D axisY = Geometries.CreateParallelepiped(new Point3D(0, 0, 0), axisWidth, axisLen, axisWidth);
-      GeometryModel3D axisYModel = new GeometryModel3D(axisY, axisMaterial);
+      // X axis arrows (both ends)
+      AddAxisArrow(modelGroup, new Point3D(halfLen, 0, 0), new Vector3D(1, 0, 0), 
+                   arrowHeadRadius, arrowHeadLength, xAxisMaterial);
+      AddAxisArrow(modelGroup, new Point3D(-halfLen, 0, 0), new Vector3D(-1, 0, 0), 
+                   arrowHeadRadius, arrowHeadLength, xAxisMaterial);
+
+      // === Y Axis (rotate Z-aligned cylinder to Y direction) ===
+      MeshGeometry3D axisY = Geometries.CreateCylinder(axisRadius, axisLen, numSegments, 1);
+      GeometryModel3D axisYModel = new GeometryModel3D(axisY, yAxisMaterial);
+      // Rotate -90 degrees around X axis to align with Y, then translate to center
+      var yTransformGroup = new Transform3DGroup();
+      yTransformGroup.Children.Add(new RotateTransform3D(new AxisAngleRotation3D(new Vector3D(1, 0, 0), -90)));
+      yTransformGroup.Children.Add(new TranslateTransform3D(0, -halfLen, 0));
+      axisYModel.Transform = yTransformGroup;
       modelGroup.Children.Add(axisYModel);
 
-      MeshGeometry3D axisZ = Geometries.CreateParallelepiped(new Point3D(0, 0, 0), axisWidth, axisWidth, axisLen);
-      GeometryModel3D axisZModel = new GeometryModel3D(axisZ, axisMaterial);
-      modelGroup.Children.Add(axisZModel);
+      // Y axis arrows (both ends)
+      AddAxisArrow(modelGroup, new Point3D(0, halfLen, 0), new Vector3D(0, 1, 0), 
+                   arrowHeadRadius, arrowHeadLength, yAxisMaterial);
+      AddAxisArrow(modelGroup, new Point3D(0, -halfLen, 0), new Vector3D(0, -1, 0), 
+                   arrowHeadRadius, arrowHeadLength, yAxisMaterial);
     }
+
+    /// <summary>
+    /// Adds an arrow (cone) at the end of an axis.
+    /// </summary>
+    private static void AddAxisArrow(Model3DGroup modelGroup, Point3D position, Vector3D direction,
+                                     double radius, double length, Material material)
+    {
+      // Create a cone using CreateVectorArrow with minimal base
+      MeshGeometry3D arrow = Geometries.CreateVectorArrow(radius * 0.1, length * 0.1, 12, 1, radius, length);
+      GeometryModel3D arrowModel = new GeometryModel3D(arrow, material);
+
+      // The arrow is created pointing in +Z direction, centered at origin
+      // We need to rotate it to match the axis direction and translate to position
+
+      var transformGroup = new Transform3DGroup();
+
+      // Determine rotation needed
+      Vector3D defaultDir = new Vector3D(0, 0, 1);
+      Vector3D targetDir = direction;
+      targetDir.Normalize();
+
+      Vector3D cross = Vector3D.CrossProduct(defaultDir, targetDir);
+      double dot = Vector3D.DotProduct(defaultDir, targetDir);
+      double angle = Math.Acos(Math.Clamp(dot, -1, 1)) * 180 / Math.PI;
+
+      if (cross.Length > 1e-10)
+      {
+        cross.Normalize();
+        transformGroup.Children.Add(new RotateTransform3D(new AxisAngleRotation3D(cross, angle)));
+      }
+      else if (dot < 0)
+      {
+        // 180 degree rotation needed
+        transformGroup.Children.Add(new RotateTransform3D(new AxisAngleRotation3D(new Vector3D(1, 0, 0), 180)));
+      }
+
+      // Translate to position (arrow tip should be at position + direction * length/2)
+      transformGroup.Children.Add(new TranslateTransform3D(position.X, position.Y, position.Z));
+
+      arrowModel.Transform = transformGroup;
+      modelGroup.Children.Add(arrowModel);
+    }
+
     public static void DrawPoint(Canvas mainCanvas, CoordSystemParams coordSysParams, double x, double y, Color inColor)
     {
       Ellipse circle = new Ellipse();
