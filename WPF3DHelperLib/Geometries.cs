@@ -1,38 +1,70 @@
 ﻿using MML;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Security.Cryptography.Xml;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Media.Media3D;
 
 namespace WPF3DHelperLib
 {
-  public class Geometries
+  /// <summary>
+  /// Provides factory methods for creating 3D mesh geometries.
+  /// </summary>
+  public static class Geometries
   {
+    #region Box/Cube Methods
+
+    /// <summary>
+    /// Creates a cube mesh from a CubeModel.
+    /// </summary>
     public static MeshGeometry3D CreateCube(CubeModel cubeModel)
     {
-      return CreateCube(cubeModel.Center, cubeModel.SideLength);
+      return CreateBox(cubeModel.Center, cubeModel.SideLength, cubeModel.SideLength, cubeModel.SideLength);
     }
+
+    /// <summary>
+    /// Creates a cube mesh centered at the origin.
+    /// </summary>
+    /// <param name="length">The side length of the cube.</param>
     public static MeshGeometry3D CreateCube(double length)
     {
-      return CreateCube(new Point3D(0, 0, 0), length);
+      return CreateBox(new Point3D(0, 0, 0), length, length, length);
     }
-    public static MeshGeometry3D CreateCube(Point3D inCenter, double length)
+
+    /// <summary>
+    /// Creates a cube mesh centered at the specified point.
+    /// </summary>
+    /// <param name="center">The center point of the cube.</param>
+    /// <param name="length">The side length of the cube.</param>
+    public static MeshGeometry3D CreateCube(Point3D center, double length)
+    {
+      return CreateBox(center, length, length, length);
+    }
+
+    /// <summary>
+    /// Creates a rectangular box (parallelepiped) mesh centered at the specified point.
+    /// </summary>
+    /// <param name="center">The center point of the box.</param>
+    /// <param name="lengthX">The length along the X axis.</param>
+    /// <param name="lengthY">The length along the Y axis.</param>
+    /// <param name="lengthZ">The length along the Z axis.</param>
+    public static MeshGeometry3D CreateBox(Point3D center, double lengthX, double lengthY, double lengthZ)
     {
       MeshGeometry3D mesh = new MeshGeometry3D();
 
-      Point3D p1 = new Point3D(inCenter.X - length / 2, inCenter.Y + length / 2, inCenter.Z + length / 2);
-      Point3D p2 = new Point3D(inCenter.X + length / 2, inCenter.Y + length / 2, inCenter.Z + length / 2);
-      Point3D p3 = new Point3D(inCenter.X + length / 2, inCenter.Y + length / 2, inCenter.Z - length / 2);
-      Point3D p4 = new Point3D(inCenter.X - length / 2, inCenter.Y + length / 2, inCenter.Z - length / 2);
-      Point3D p5 = new Point3D(inCenter.X - length / 2, inCenter.Y - length / 2, inCenter.Z + length / 2);
-      Point3D p6 = new Point3D(inCenter.X + length / 2, inCenter.Y - length / 2, inCenter.Z + length / 2);
-      Point3D p7 = new Point3D(inCenter.X + length / 2, inCenter.Y - length / 2, inCenter.Z - length / 2);
-      Point3D p8 = new Point3D(inCenter.X - length / 2, inCenter.Y - length / 2, inCenter.Z - length / 2);
-                       
+      double hx = lengthX / 2;
+      double hy = lengthY / 2;
+      double hz = lengthZ / 2;
+
+      // Define 8 vertices of the box
+      Point3D p0 = new Point3D(center.X - hx, center.Y + hy, center.Z + hz);
+      Point3D p1 = new Point3D(center.X + hx, center.Y + hy, center.Z + hz);
+      Point3D p2 = new Point3D(center.X + hx, center.Y + hy, center.Z - hz);
+      Point3D p3 = new Point3D(center.X - hx, center.Y + hy, center.Z - hz);
+      Point3D p4 = new Point3D(center.X - hx, center.Y - hy, center.Z + hz);
+      Point3D p5 = new Point3D(center.X + hx, center.Y - hy, center.Z + hz);
+      Point3D p6 = new Point3D(center.X + hx, center.Y - hy, center.Z - hz);
+      Point3D p7 = new Point3D(center.X - hx, center.Y - hy, center.Z - hz);
+
+      mesh.Positions.Add(p0);
       mesh.Positions.Add(p1);
       mesh.Positions.Add(p2);
       mesh.Positions.Add(p3);
@@ -40,592 +72,455 @@ namespace WPF3DHelperLib
       mesh.Positions.Add(p5);
       mesh.Positions.Add(p6);
       mesh.Positions.Add(p7);
-      mesh.Positions.Add(p8);
 
-      // gornja ploha
-      mesh.TriangleIndices.Add(0);
-      mesh.TriangleIndices.Add(1);
-      mesh.TriangleIndices.Add(2);
+      // Top face (+Y)
+      AddQuad(mesh, 0, 1, 2, 3);
 
-      mesh.TriangleIndices.Add(0);
-      mesh.TriangleIndices.Add(2);
-      mesh.TriangleIndices.Add(3);
+      // Bottom face (-Y)
+      AddQuad(mesh, 4, 6, 5, 4);
+      AddQuad(mesh, 4, 7, 6, 4);
 
-      // donja ploha
-      mesh.TriangleIndices.Add(4);
-      mesh.TriangleIndices.Add(6);
-      mesh.TriangleIndices.Add(5);
+      // Front face (+Z)
+      AddQuad(mesh, 0, 5, 1, 0);
+      AddQuad(mesh, 0, 4, 5, 0);
 
-      mesh.TriangleIndices.Add(4);
-      mesh.TriangleIndices.Add(7);
-      mesh.TriangleIndices.Add(6);
+      // Right face (+X)
+      AddQuad(mesh, 1, 5, 6, 1);
+      AddQuad(mesh, 1, 6, 2, 1);
 
-      // srednja 1 ploha
-      mesh.TriangleIndices.Add(0);
-      mesh.TriangleIndices.Add(5);
-      mesh.TriangleIndices.Add(1);
+      // Back face (-Z)
+      AddQuad(mesh, 2, 6, 7, 2);
+      AddQuad(mesh, 2, 7, 3, 2);
 
-      mesh.TriangleIndices.Add(0);
-      mesh.TriangleIndices.Add(4);
-      mesh.TriangleIndices.Add(5);
-
-      // srednja 2 ploha
-      mesh.TriangleIndices.Add(1);
-      mesh.TriangleIndices.Add(5);
-      mesh.TriangleIndices.Add(6);
-
-      mesh.TriangleIndices.Add(1);
-      mesh.TriangleIndices.Add(6);
-      mesh.TriangleIndices.Add(2);
-
-      // srednja 3 ploha
-      mesh.TriangleIndices.Add(2);
-      mesh.TriangleIndices.Add(6);
-      mesh.TriangleIndices.Add(7);
-
-      mesh.TriangleIndices.Add(2);
-      mesh.TriangleIndices.Add(7);
-      mesh.TriangleIndices.Add(3);
-
-      // srednja 4 ploha
-      mesh.TriangleIndices.Add(3);
-      mesh.TriangleIndices.Add(7);
-      mesh.TriangleIndices.Add(4);
-
-      mesh.TriangleIndices.Add(3);
-      mesh.TriangleIndices.Add(4);
-      mesh.TriangleIndices.Add(0);
+      // Left face (-X)
+      AddQuad(mesh, 3, 7, 4, 3);
+      AddQuad(mesh, 3, 4, 0, 3);
 
       return mesh;
     }
 
-    public static MeshGeometry3D CreateParallelepiped(Point3D inCenter, double lengthX, double lengthY, double lengthZ)
+    /// <summary>
+    /// Creates a rectangular box (parallelepiped) mesh centered at the specified point.
+    /// Alias for CreateBox for backward compatibility.
+    /// </summary>
+    public static MeshGeometry3D CreateParallelepiped(Point3D center, double lengthX, double lengthY, double lengthZ)
     {
-      MeshGeometry3D mesh = new MeshGeometry3D();
-
-      Point3D p1 = new Point3D(inCenter.X - lengthX / 2, inCenter.Y + lengthY / 2, inCenter.Z + lengthZ / 2);
-      Point3D p2 = new Point3D(inCenter.X + lengthX / 2, inCenter.Y + lengthY / 2, inCenter.Z + lengthZ / 2);
-      Point3D p3 = new Point3D(inCenter.X + lengthX / 2, inCenter.Y + lengthY / 2, inCenter.Z - lengthZ / 2);
-      Point3D p4 = new Point3D(inCenter.X - lengthX / 2, inCenter.Y + lengthY / 2, inCenter.Z - lengthZ / 2);
-      Point3D p5 = new Point3D(inCenter.X - lengthX / 2, inCenter.Y - lengthY / 2, inCenter.Z + lengthZ / 2);
-      Point3D p6 = new Point3D(inCenter.X + lengthX / 2, inCenter.Y - lengthY / 2, inCenter.Z + lengthZ / 2);
-      Point3D p7 = new Point3D(inCenter.X + lengthX / 2, inCenter.Y - lengthY / 2, inCenter.Z - lengthZ / 2);
-      Point3D p8 = new Point3D(inCenter.X - lengthX / 2, inCenter.Y - lengthY / 2, inCenter.Z - lengthZ / 2);
-
-      mesh.Positions.Add(p1);
-      mesh.Positions.Add(p2);
-      mesh.Positions.Add(p3);
-      mesh.Positions.Add(p4);
-      mesh.Positions.Add(p5);
-      mesh.Positions.Add(p6);
-      mesh.Positions.Add(p7);
-      mesh.Positions.Add(p8);
-
-      // gornja ploha
-      mesh.TriangleIndices.Add(0);
-      mesh.TriangleIndices.Add(1);
-      mesh.TriangleIndices.Add(2);
-
-      mesh.TriangleIndices.Add(0);
-      mesh.TriangleIndices.Add(2);
-      mesh.TriangleIndices.Add(3);
-
-      // donja ploha
-      mesh.TriangleIndices.Add(4);
-      mesh.TriangleIndices.Add(6);
-      mesh.TriangleIndices.Add(5);
-
-      mesh.TriangleIndices.Add(4);
-      mesh.TriangleIndices.Add(7);
-      mesh.TriangleIndices.Add(6);
-
-      // srednja 1 ploha
-      mesh.TriangleIndices.Add(0);
-      mesh.TriangleIndices.Add(5);
-      mesh.TriangleIndices.Add(1);
-
-      mesh.TriangleIndices.Add(0);
-      mesh.TriangleIndices.Add(4);
-      mesh.TriangleIndices.Add(5);
-
-      // srednja 2 ploha
-      mesh.TriangleIndices.Add(1);
-      mesh.TriangleIndices.Add(5);
-      mesh.TriangleIndices.Add(6);
-
-      mesh.TriangleIndices.Add(1);
-      mesh.TriangleIndices.Add(6);
-      mesh.TriangleIndices.Add(2);
-
-      // srednja 3 ploha
-      mesh.TriangleIndices.Add(2);
-      mesh.TriangleIndices.Add(6);
-      mesh.TriangleIndices.Add(7);
-
-      mesh.TriangleIndices.Add(2);
-      mesh.TriangleIndices.Add(7);
-      mesh.TriangleIndices.Add(3);
-
-      // srednja 4 ploha
-      mesh.TriangleIndices.Add(3);
-      mesh.TriangleIndices.Add(7);
-      mesh.TriangleIndices.Add(4);
-
-      mesh.TriangleIndices.Add(3);
-      mesh.TriangleIndices.Add(4);
-      mesh.TriangleIndices.Add(0);
-
-      return mesh;
+      return CreateBox(center, lengthX, lengthY, lengthZ);
     }
 
+    /// <summary>
+    /// Helper method to add a quad (two triangles) to a mesh.
+    /// </summary>
+    private static void AddQuad(MeshGeometry3D mesh, int i0, int i1, int i2, int i3)
+    {
+      mesh.TriangleIndices.Add(i0);
+      mesh.TriangleIndices.Add(i1);
+      mesh.TriangleIndices.Add(i2);
+
+      mesh.TriangleIndices.Add(i0);
+      mesh.TriangleIndices.Add(i2);
+      mesh.TriangleIndices.Add(i3);
+    }
+
+    #endregion
+
+    #region Cylinder and Arrow Methods
+
+    /// <summary>
+    /// Creates a cylinder mesh along the Z axis.
+    /// </summary>
+    /// <param name="baseRadius">The radius of the cylinder.</param>
+    /// <param name="height">The height of the cylinder.</param>
+    /// <param name="numBaseDivs">Number of divisions around the circumference.</param>
+    /// <param name="numHeightDivs">Number of divisions along the height.</param>
     public static MeshGeometry3D CreateCylinder(double baseRadius, double height, int numBaseDivs, int numHeightDivs)
     {
       MeshGeometry3D mesh = new MeshGeometry3D();
 
-      // add base points
+      // Add base ring points
       for (int i = 0; i < numBaseDivs; i++)
       {
         double angle = 2 * Math.PI * i / numBaseDivs;
-        double x = baseRadius * Math.Cos(angle);
-        double y = baseRadius * Math.Sin(angle);
-
-        Point3D p = new Point3D(x, y, 0);
-        mesh.Positions.Add(p);
+        mesh.Positions.Add(new Point3D(baseRadius * Math.Cos(angle), baseRadius * Math.Sin(angle), 0));
       }
 
+      // Add height segment rings and triangles
       double segmentHeight = height / numHeightDivs;
       for (int h = 1; h <= numHeightDivs; h++)
       {
-        // add layer points
+        // Add ring points at this height
         for (int i = 0; i < numBaseDivs; i++)
         {
           double angle = 2 * Math.PI * i / numBaseDivs;
-          double x = baseRadius * Math.Cos(angle);
-          double y = baseRadius * Math.Sin(angle);
-
-          Point3D p = new Point3D(x, y, h * segmentHeight);
-          mesh.Positions.Add(p);
+          mesh.Positions.Add(new Point3D(baseRadius * Math.Cos(angle), baseRadius * Math.Sin(angle), h * segmentHeight));
         }
 
-        // sad dodati triangle za layer
-        for (int i = 0; i < numBaseDivs; i++)
-        {
-          int ind1 = (h - 1) * numBaseDivs + i;
-          int ind2 = (h - 1) * numBaseDivs + (i + 1) % numBaseDivs;
-          int ind3 = h * numBaseDivs + i;
-
-          mesh.TriangleIndices.Add(ind1);
-          mesh.TriangleIndices.Add(ind2);
-          mesh.TriangleIndices.Add(ind3);
-
-          ind1 = (h - 1) * numBaseDivs + (i + 1) % numBaseDivs;
-          ind2 = h * numBaseDivs + (i + 1) % numBaseDivs;
-          ind3 = h * numBaseDivs + i;
-
-          mesh.TriangleIndices.Add(ind1);
-          mesh.TriangleIndices.Add(ind2);
-          mesh.TriangleIndices.Add(ind3);
-        }
+        // Add triangles connecting this ring to previous
+        AddCylinderRingTriangles(mesh, h - 1, h, numBaseDivs);
       }
 
-      // add base and top triangles
-      // first, add center points on base and top
-      Point3D pBase = new Point3D(0, 0, 0);
-      Point3D pTop = new Point3D(0, 0, height);
-      mesh.Positions.Add(pBase);
-      mesh.Positions.Add(pTop);
+      // Add base and top cap center points
+      int baseCenterInd = mesh.Positions.Count;
+      mesh.Positions.Add(new Point3D(0, 0, 0));
+      int topCenterInd = mesh.Positions.Count;
+      mesh.Positions.Add(new Point3D(0, 0, height));
 
-      int baseCenterInd = (numHeightDivs + 1) * numBaseDivs;
-      int topCenterInd = (numHeightDivs + 1) * numBaseDivs + 1;
-
-      for (int i = 0; i < numBaseDivs; i++)
-      {
-        // base
-        int ind1 = i;
-        int ind2 = baseCenterInd;
-        int ind3 = (i + 1) % numBaseDivs;
-
-        mesh.TriangleIndices.Add(ind1);
-        mesh.TriangleIndices.Add(ind2);
-        mesh.TriangleIndices.Add(ind3);
-
-        // top
-        ind1 = numHeightDivs * numBaseDivs + i;
-        ind2 = numHeightDivs * numBaseDivs + (i + 1) % numBaseDivs;
-        ind3 = topCenterInd;
-
-        mesh.TriangleIndices.Add(ind1);
-        mesh.TriangleIndices.Add(ind2);
-        mesh.TriangleIndices.Add(ind3);
-      }
+      // Add cap triangles
+      AddCapTriangles(mesh, 0, baseCenterInd, numBaseDivs, false);
+      AddCapTriangles(mesh, numHeightDivs * numBaseDivs, topCenterInd, numBaseDivs, true);
 
       return mesh;
     }
 
-    public static MeshGeometry3D CreateVectorArrow(double baseRadius, double height, int numBaseDivs, int numHeightDivs, double topAdditionalRadius, double topAdditionalHeight)
+    /// <summary>
+    /// Creates an arrow mesh (cylinder with cone head) along the Z axis.
+    /// </summary>
+    public static MeshGeometry3D CreateVectorArrow(double baseRadius, double height, int numBaseDivs, int numHeightDivs, 
+                                                    double topAdditionalRadius, double topAdditionalHeight)
     {
       MeshGeometry3D mesh = new MeshGeometry3D();
 
-      // add base points
       double totalHeight = height + topAdditionalHeight;
       double dZ = totalHeight / 2;
+
+      // Add base ring points (offset so arrow is centered)
       for (int i = 0; i < numBaseDivs; i++)
       {
         double angle = 2 * Math.PI * i / numBaseDivs;
-        double x = baseRadius * Math.Cos(angle);
-        double y = baseRadius * Math.Sin(angle);
-
-        Point3D p = new Point3D(x, y, 0 - dZ);
-        mesh.Positions.Add(p);
+        mesh.Positions.Add(new Point3D(baseRadius * Math.Cos(angle), baseRadius * Math.Sin(angle), -dZ));
       }
 
+      // Add shaft rings
       double segmentHeight = height / numHeightDivs;
       for (int h = 1; h <= numHeightDivs; h++)
       {
-        // add layer points
         for (int i = 0; i < numBaseDivs; i++)
         {
           double angle = 2 * Math.PI * i / numBaseDivs;
-          double x = baseRadius * Math.Cos(angle);
-          double y = baseRadius * Math.Sin(angle);
-
-          Point3D p = new Point3D(x, y, h * segmentHeight - dZ);
-          mesh.Positions.Add(p);
+          mesh.Positions.Add(new Point3D(baseRadius * Math.Cos(angle), baseRadius * Math.Sin(angle), h * segmentHeight - dZ));
         }
 
-        // sad dodati triangle za layer
-        for (int i = 0; i < numBaseDivs; i++)
-        {
-          int ind1 = (h - 1) * numBaseDivs + i;
-          int ind2 = (h - 1) * numBaseDivs + (i + 1) % numBaseDivs;
-          int ind3 = h * numBaseDivs + i;
-
-          mesh.TriangleIndices.Add(ind1);
-          mesh.TriangleIndices.Add(ind2);
-          mesh.TriangleIndices.Add(ind3);
-
-          ind1 = (h - 1) * numBaseDivs + (i + 1) % numBaseDivs;
-          ind2 = h * numBaseDivs + (i + 1) % numBaseDivs;
-          ind3 = h * numBaseDivs + i;
-
-          mesh.TriangleIndices.Add(ind1);
-          mesh.TriangleIndices.Add(ind2);
-          mesh.TriangleIndices.Add(ind3);
-        }
+        AddCylinderRingTriangles(mesh, h - 1, h, numBaseDivs);
       }
 
-      // add base triangle
-      // first, add center point on base 
-      Point3D pBase = new Point3D(0, 0, 0 - dZ);
-      mesh.Positions.Add(pBase);
+      // Add base cap
+      int baseCenterInd = mesh.Positions.Count;
+      mesh.Positions.Add(new Point3D(0, 0, -dZ));
+      AddCapTriangles(mesh, 0, baseCenterInd, numBaseDivs, false);
 
-      int baseCenterInd = (numHeightDivs + 1) * numBaseDivs;
+      // Add arrow tip point
+      int topCenterInd = mesh.Positions.Count;
+      mesh.Positions.Add(new Point3D(0, 0, height + topAdditionalHeight - dZ));
 
-      for (int i = 0; i < numBaseDivs; i++)
-      {
-        // base
-        int ind1 = i;
-        int ind2 = baseCenterInd;
-        int ind3 = (i + 1) % numBaseDivs;
-
-        mesh.TriangleIndices.Add(ind1);
-        mesh.TriangleIndices.Add(ind2);
-        mesh.TriangleIndices.Add(ind3);
-      }
-
-      // adding vector arrow
-      Point3D pTop = new Point3D(0, 0, height + topAdditionalHeight - dZ);
-      mesh.Positions.Add(pTop);
-      int topCenterInd = (numHeightDivs + 1) * numBaseDivs + 1;
-
-      // sad dodati obrub na vrhu
-      // najprije dodavanje tocaka
+      // Add arrow head base ring (wider than shaft)
+      int arrowBaseStart = mesh.Positions.Count;
       for (int i = 0; i < numBaseDivs; i++)
       {
         double angle = 2 * Math.PI * i / numBaseDivs;
-        double x = (baseRadius + topAdditionalRadius) * Math.Cos(angle);
-        double y = (baseRadius + topAdditionalRadius) * Math.Sin(angle);
-
-        Point3D p = new Point3D(x, y, height - dZ);
-        mesh.Positions.Add(p);
+        double r = baseRadius + topAdditionalRadius;
+        mesh.Positions.Add(new Point3D(r * Math.Cos(angle), r * Math.Sin(angle), height - dZ));
       }
 
-      // a onda i triangles, najprije obrub gornji
+      // Add arrow head cone triangles (to tip)
       for (int i = 0; i < numBaseDivs; i++)
       {
-        // top
-        int ind1 = 2 + (numHeightDivs + 1) * numBaseDivs + i;
-        int ind2 = 2 + (numHeightDivs + 1) * numBaseDivs + (i + 1) % numBaseDivs;
-        int ind3 = topCenterInd;
-
-        mesh.TriangleIndices.Add(ind1);
-        mesh.TriangleIndices.Add(ind2);
-        mesh.TriangleIndices.Add(ind3);
+        mesh.TriangleIndices.Add(arrowBaseStart + i);
+        mesh.TriangleIndices.Add(arrowBaseStart + (i + 1) % numBaseDivs);
+        mesh.TriangleIndices.Add(topCenterInd);
       }
 
-      // a onda i obrobu s donje strane
+      // Add arrow head base triangles (connecting to shaft)
+      int shaftTopStart = numHeightDivs * numBaseDivs;
       for (int i = 0; i < numBaseDivs; i++)
       {
-        int ind1 = 2 + (numHeightDivs + 1) * numBaseDivs + i;
-        int ind2 = numHeightDivs * numBaseDivs + i;
-        int ind3 = 2 + (numHeightDivs + 1) * numBaseDivs + (i + 1) % numBaseDivs;
+        mesh.TriangleIndices.Add(arrowBaseStart + i);
+        mesh.TriangleIndices.Add(shaftTopStart + i);
+        mesh.TriangleIndices.Add(arrowBaseStart + (i + 1) % numBaseDivs);
 
-        mesh.TriangleIndices.Add(ind1);
-        mesh.TriangleIndices.Add(ind2);
-        mesh.TriangleIndices.Add(ind3);
-
-        ind1 = 2 + (numHeightDivs + 1) * numBaseDivs + (i + 1) % numBaseDivs;
-        ind2 = numHeightDivs * numBaseDivs + i;
-        ind3 = numHeightDivs * numBaseDivs + (i + 1) % numBaseDivs;
-
-        mesh.TriangleIndices.Add(ind1);
-        mesh.TriangleIndices.Add(ind2);
-        mesh.TriangleIndices.Add(ind3);
+        mesh.TriangleIndices.Add(arrowBaseStart + (i + 1) % numBaseDivs);
+        mesh.TriangleIndices.Add(shaftTopStart + i);
+        mesh.TriangleIndices.Add(shaftTopStart + (i + 1) % numBaseDivs);
       }
 
       return mesh;
     }
 
-    public static MeshGeometry3D CreateSphere(Point3D center, double radius)
+    /// <summary>
+    /// Adds triangles connecting two cylinder rings.
+    /// </summary>
+    private static void AddCylinderRingTriangles(MeshGeometry3D mesh, int ring1, int ring2, int numDivs)
+    {
+      for (int i = 0; i < numDivs; i++)
+      {
+        int i1 = ring1 * numDivs + i;
+        int i2 = ring1 * numDivs + (i + 1) % numDivs;
+        int i3 = ring2 * numDivs + i;
+        int i4 = ring2 * numDivs + (i + 1) % numDivs;
+
+        mesh.TriangleIndices.Add(i1);
+        mesh.TriangleIndices.Add(i2);
+        mesh.TriangleIndices.Add(i3);
+
+        mesh.TriangleIndices.Add(i2);
+        mesh.TriangleIndices.Add(i4);
+        mesh.TriangleIndices.Add(i3);
+      }
+    }
+
+    /// <summary>
+    /// Adds cap triangles for cylinder/cone.
+    /// </summary>
+    private static void AddCapTriangles(MeshGeometry3D mesh, int ringStart, int centerIndex, int numDivs, bool isTop)
+    {
+      for (int i = 0; i < numDivs; i++)
+      {
+        if (isTop)
+        {
+          mesh.TriangleIndices.Add(ringStart + i);
+          mesh.TriangleIndices.Add(ringStart + (i + 1) % numDivs);
+          mesh.TriangleIndices.Add(centerIndex);
+        }
+        else
+        {
+          mesh.TriangleIndices.Add(ringStart + i);
+          mesh.TriangleIndices.Add(centerIndex);
+          mesh.TriangleIndices.Add(ringStart + (i + 1) % numDivs);
+        }
+      }
+    }
+
+    #endregion
+
+    #region Sphere Methods
+
+    /// <summary>
+    /// Creates a sphere mesh.
+    /// </summary>
+    /// <param name="center">The center of the sphere.</param>
+    /// <param name="radius">The radius of the sphere.</param>
+    /// <param name="latitudeDivisions">Number of divisions around the equator.</param>
+    /// <param name="longitudeDivisions">Number of divisions from pole to pole.</param>
+    public static MeshGeometry3D CreateSphere(Point3D center, double radius, int latitudeDivisions = 10, int longitudeDivisions = 10)
     {
       MeshGeometry3D mesh = new MeshGeometry3D();
 
-      int N = 10;
-      int M = 10;    // koliko stripova po paralelama imamo
+      int N = latitudeDivisions;
+      int M = longitudeDivisions;
 
-      double angleLatitudeStep = 2 * Math.PI / N;
-      double angleLongitudeStep = Math.PI / M;
+      double angleLatStep = 2 * Math.PI / N;
+      double angleLonStep = Math.PI / M;
 
-      Point3D northPole = new Point3D(center.X, center.Y, center.Z); northPole.Z += radius;
+      // North pole
+      mesh.Positions.Add(new Point3D(center.X, center.Y, center.Z + radius));
       int northPoleInd = 0;
-      mesh.Positions.Add(northPole);
 
-      // točke na ekvatoru
-      // dodati dvije paralele
-      double angleLon = 0;
+      // Add latitude rings
       for (int j = 1; j < M; j++)
       {
-        angleLon = angleLongitudeStep * j;
-        double circleRadius = radius * Math.Sin(angleLon);
+        double angleLon = angleLonStep * j;
+        double ringRadius = radius * Math.Sin(angleLon);
         double z = radius * Math.Cos(angleLon);
 
-        double angleLat = 0;
         for (int i = 0; i < N; i++)
         {
-          angleLat = angleLatitudeStep * i;
-          Point3D p = new Point3D(center.X + circleRadius * Math.Cos(angleLat), center.Y + circleRadius * Math.Sin(angleLat), center.Z + z);
-
-          mesh.Positions.Add(p);
+          double angleLat = angleLatStep * i;
+          mesh.Positions.Add(new Point3D(
+            center.X + ringRadius * Math.Cos(angleLat),
+            center.Y + ringRadius * Math.Sin(angleLat),
+            center.Z + z));
         }
       }
 
-      Point3D southPole = new Point3D(center.X, center.Y, center.Z); southPole.Z -= radius;
-      int southPoleInd = N * (M - 1) + 1;
-      mesh.Positions.Add(southPole);
+      // South pole
+      int southPoleInd = mesh.Positions.Count;
+      mesh.Positions.Add(new Point3D(center.X, center.Y, center.Z - radius));
 
-      // dodajemo od North pole do ekvatora
-      for (int i = 1; i <= N; i++)
+      // North pole triangles
+      for (int i = 0; i < N; i++)
       {
         mesh.TriangleIndices.Add(northPoleInd);
-        mesh.TriangleIndices.Add(i);
-        if (i < N)
-          mesh.TriangleIndices.Add(i + 1);
-        else
-          mesh.TriangleIndices.Add(1);
+        mesh.TriangleIndices.Add(1 + i);
+        mesh.TriangleIndices.Add(1 + (i + 1) % N);
       }
 
-      // sad idemo dodati stripove između
+      // Middle strip triangles
       for (int j = 1; j < M - 1; j++)
       {
-        int upperParallelStartInd = 1 + N * (j - 1);
-        int lowerParallelStartInd = 1 + N * j;
+        int upperStart = 1 + N * (j - 1);
+        int lowerStart = 1 + N * j;
 
         for (int i = 0; i < N; i++)
         {
-          // dodajemo "lijevi" triangle četverokuta
-          mesh.TriangleIndices.Add(upperParallelStartInd + i);
-          mesh.TriangleIndices.Add(lowerParallelStartInd + i);
-          if (i < N - 1)
-            mesh.TriangleIndices.Add(lowerParallelStartInd + i + 1);
-          else
-            mesh.TriangleIndices.Add(lowerParallelStartInd);
+          int nextI = (i + 1) % N;
 
-          mesh.TriangleIndices.Add(upperParallelStartInd + i);
-          if (i < N - 1)
-            mesh.TriangleIndices.Add(lowerParallelStartInd + i + 1);
-          else
-            mesh.TriangleIndices.Add(lowerParallelStartInd);
-          if (i < N - 1)
-            mesh.TriangleIndices.Add(upperParallelStartInd + i + 1);
-          else
-            mesh.TriangleIndices.Add(upperParallelStartInd);
+          mesh.TriangleIndices.Add(upperStart + i);
+          mesh.TriangleIndices.Add(lowerStart + i);
+          mesh.TriangleIndices.Add(lowerStart + nextI);
+
+          mesh.TriangleIndices.Add(upperStart + i);
+          mesh.TriangleIndices.Add(lowerStart + nextI);
+          mesh.TriangleIndices.Add(upperStart + nextI);
         }
       }
 
-      // sad donja polusfera
-      int lastParallelStartInd = 1 + N * (M - 2);
+      // South pole triangles
+      int lastRingStart = 1 + N * (M - 2);
       for (int i = 0; i < N; i++)
       {
         mesh.TriangleIndices.Add(southPoleInd);
-        if (i < N - 1)
-          mesh.TriangleIndices.Add(lastParallelStartInd + i + 1);
-        else
-          mesh.TriangleIndices.Add(lastParallelStartInd);
-
-        mesh.TriangleIndices.Add(lastParallelStartInd + i);
+        mesh.TriangleIndices.Add(lastRingStart + (i + 1) % N);
+        mesh.TriangleIndices.Add(lastRingStart + i);
       }
 
       return mesh;
     }
 
-    public static MeshGeometry3D CreateDvostrukiStozac(Point3D center, double radius, double height)
+    #endregion
+
+    #region Special Shapes
+
+    /// <summary>
+    /// Creates a double cone (bicone) mesh - two cones meeting at their bases.
+    /// </summary>
+    public static MeshGeometry3D CreateDoubleCone(Point3D center, double radius, double height)
     {
       MeshGeometry3D mesh = new MeshGeometry3D();
 
       int N = 20;
       double angleStep = 2 * Math.PI / N;
 
-      Point3D northPole = center; northPole.Z += height;
+      // Top point
+      mesh.Positions.Add(new Point3D(center.X, center.Y, center.Z + height));
       int northPoleInd = 0;
-      mesh.Positions.Add(northPole);
 
-      // točke na ekvatoru
-      double angle = 0;
+      // Equator ring
       for (int i = 0; i < N; i++)
       {
-        angle = angleStep * i;
-        Point3D p = new Point3D(radius * Math.Cos(angle), radius * Math.Sin(angle), 0);
-
-        mesh.Positions.Add(p);
+        double angle = angleStep * i;
+        mesh.Positions.Add(new Point3D(
+          center.X + radius * Math.Cos(angle),
+          center.Y + radius * Math.Sin(angle),
+          center.Z));
       }
 
-      Point3D southPole = center; southPole.Z -= height;
+      // Bottom point
       int southPoleInd = N + 1;
-      mesh.Positions.Add(southPole);
+      mesh.Positions.Add(new Point3D(center.X, center.Y, center.Z - height));
 
-      // dodajemo od North pole do ekvatora
-      for (int i = 1; i <= N; i++)
+      // Top cone triangles
+      for (int i = 0; i < N; i++)
       {
         mesh.TriangleIndices.Add(northPoleInd);
-        mesh.TriangleIndices.Add(i);
-        if (i < N)
-          mesh.TriangleIndices.Add(i + 1);
-        else
-          mesh.TriangleIndices.Add(1);
+        mesh.TriangleIndices.Add(1 + i);
+        mesh.TriangleIndices.Add(1 + (i + 1) % N);
       }
 
-      // sad donja polusfera
-      for (int i = 1; i <= N; i++)
+      // Bottom cone triangles
+      for (int i = 0; i < N; i++)
       {
         mesh.TriangleIndices.Add(southPoleInd);
-        if (i < N)
-          mesh.TriangleIndices.Add(i + 1);
-        else
-          mesh.TriangleIndices.Add(1);
-
-        mesh.TriangleIndices.Add(i);
+        mesh.TriangleIndices.Add(1 + (i + 1) % N);
+        mesh.TriangleIndices.Add(1 + i);
       }
 
       return mesh;
     }
 
+    /// <summary>
+    /// Creates a double cone mesh. Alias for backward compatibility.
+    /// </summary>
+    public static MeshGeometry3D CreateDvostrukiStozac(Point3D center, double radius, double height)
+    {
+      return CreateDoubleCone(center, radius, height);
+    }
+
+    #endregion
+
+    #region Surface and Plane Methods
+
+    /// <summary>
+    /// Creates a surface mesh from matrix data.
+    /// </summary>
     public static MeshGeometry3D CreateSurface(Matrix data, double xMin, double xMax, double yMin, double yMax, double scaleX, double scaleY)
     {
       MeshGeometry3D mesh = new MeshGeometry3D();
 
       int numRows = data.Rows;
       int numCols = data.Cols;
-
-      // TODO - provesti analizu z vrijednosti i odrediti da je ovo 0,1%
-
       double dz = 0.01;
 
-      // dodati točke
+      // Add top surface points
       for (int i = 0; i < numRows; i++)
+      {
         for (int j = 0; j < numCols; j++)
         {
-          double x = scaleX * (xMin + i * (xMax - xMin) / data.Rows);
-          double y = scaleY * (yMin + j * (yMax - yMin) / data.Cols);
+          double x = scaleX * (xMin + i * (xMax - xMin) / numRows);
+          double y = scaleY * (yMin + j * (yMax - yMin) / numCols);
           double z = data.ElemAt(i, j);
-
-          Point3D p = new Point3D(x, y, z + dz);
-          mesh.Positions.Add(p);
+          mesh.Positions.Add(new Point3D(x, y, z + dz));
         }
+      }
 
-      // točke za donju plohu
+      // Add bottom surface points
       for (int i = 0; i < numRows; i++)
+      {
         for (int j = 0; j < numCols; j++)
         {
-          double x = scaleX * (xMin + i * (xMax - xMin) / data.Rows);
-          double y = scaleY * (yMin + j * (yMax - yMin) / data.Cols);
+          double x = scaleX * (xMin + i * (xMax - xMin) / numRows);
+          double y = scaleY * (yMin + j * (yMax - yMin) / numCols);
           double z = data.ElemAt(i, j);
-
-          Point3D p = new Point3D(x, y, z - dz);
-          mesh.Positions.Add(p);
+          mesh.Positions.Add(new Point3D(x, y, z - dz));
         }
+      }
 
-      // dodati triangles za gornju plohu
+      // Add top surface triangles
       for (int i = 0; i < numRows - 1; i++)
+      {
         for (int j = 0; j < numCols - 1; j++)
         {
-            int ind1 = i * numCols + j;
-            int ind2 = i * numCols + j + 1;
-            int ind3 = (i + 1) * numCols + j;
+          int idx = i * numCols + j;
+          mesh.TriangleIndices.Add(idx);
+          mesh.TriangleIndices.Add(idx + numCols);
+          mesh.TriangleIndices.Add(idx + 1);
 
-            mesh.TriangleIndices.Add(ind1);
-            mesh.TriangleIndices.Add(ind3);
-            mesh.TriangleIndices.Add(ind2);
-
-            ind1 = i * numCols + j + 1;
-            ind2 = (i + 1) * numCols + j + 1;
-            ind3 = (i + 1) * numCols + j;
-
-            mesh.TriangleIndices.Add(ind1);
-            mesh.TriangleIndices.Add(ind3);
-            mesh.TriangleIndices.Add(ind2);
+          mesh.TriangleIndices.Add(idx + 1);
+          mesh.TriangleIndices.Add(idx + numCols);
+          mesh.TriangleIndices.Add(idx + numCols + 1);
         }
+      }
 
-      // TODO - treba dodati i plohu s druge strane
-      int startInd = numRows * numCols;
+      // Add bottom surface triangles
+      int offset = numRows * numCols;
       for (int i = 0; i < numRows - 1; i++)
+      {
         for (int j = 0; j < numCols - 1; j++)
         {
-          int ind1 = startInd + i * numCols + j;
-          int ind2 = startInd + i * numCols + j + 1;
-          int ind3 = startInd + (i + 1) * numCols + j;
+          int idx = offset + i * numCols + j;
+          mesh.TriangleIndices.Add(idx);
+          mesh.TriangleIndices.Add(idx + 1);
+          mesh.TriangleIndices.Add(idx + numCols);
 
-          mesh.TriangleIndices.Add(ind1);
-          mesh.TriangleIndices.Add(ind2);
-          mesh.TriangleIndices.Add(ind3);
-
-          ind1 = startInd + i * numCols + j + 1;
-          ind2 = startInd + (i + 1) * numCols + j + 1;
-          ind3 = startInd + (i + 1) * numCols + j;
-
-          mesh.TriangleIndices.Add(ind1);
-          mesh.TriangleIndices.Add(ind2);
-          mesh.TriangleIndices.Add(ind3);
+          mesh.TriangleIndices.Add(idx + 1);
+          mesh.TriangleIndices.Add(idx + numCols + 1);
+          mesh.TriangleIndices.Add(idx + numCols);
         }
+      }
 
       return mesh;
     }
-    public static MeshGeometry3D CreatePlane()
+
+    /// <summary>
+    /// Creates a simple plane mesh.
+    /// </summary>
+    public static MeshGeometry3D CreatePlane(double size = 20)
     {
       MeshGeometry3D mesh = new MeshGeometry3D();
 
-      Point3Cartesian x1 = new Point3Cartesian(-10, -10, 0);
-      Point3Cartesian x2 = new Point3Cartesian(-10, 10, 0);
-      Point3Cartesian x3 = new Point3Cartesian(10, 10, 0);
-      Point3Cartesian x4 = new Point3Cartesian(10, -10, 0);
-
-      Point3D p1 = new Point3D(x1.X, x1.Y, x1.Z);
-      mesh.Positions.Add(p1);
-      Point3D p2 = new Point3D(x2.X, x2.Y, x2.Z);
-      mesh.Positions.Add(p2);
-      Point3D p3 = new Point3D(x3.X, x3.Y, x3.Z);
-      mesh.Positions.Add(p3);
-      Point3D p4 = new Point3D(x4.X, x4.Y, x4.Z);
-      mesh.Positions.Add(p4);
+      double half = size / 2;
+      mesh.Positions.Add(new Point3D(-half, -half, 0));
+      mesh.Positions.Add(new Point3D(-half, half, 0));
+      mesh.Positions.Add(new Point3D(half, half, 0));
+      mesh.Positions.Add(new Point3D(half, -half, 0));
 
       mesh.TriangleIndices.Add(0);
       mesh.TriangleIndices.Add(2);
@@ -635,124 +530,127 @@ namespace WPF3DHelperLib
       mesh.TriangleIndices.Add(3);
       mesh.TriangleIndices.Add(2);
 
-      Vector3Cartesian startPnt = new Vector3Cartesian(0, 0, 0);
-      Vector3Cartesian nextPnt = new Vector3Cartesian(0.1, 0.1, 1);
-
-      var normal = nextPnt - startPnt;
-      Vector3Cartesian v1 = normal / normal.Norm();
-      Vector3Cartesian v2;
-      Vector3Cartesian v3;
-
-      if (Math.Abs(normal.X) > Math.Abs(normal.Y) && Math.Abs(normal.X) > Math.Abs(normal.Z))
-      {
-        v2 = new Vector3Cartesian(0, 1 * Math.Sign(normal.Y), 0);
-        v3 = new Vector3Cartesian(0, 0, 1 * Math.Sign(normal.Z));
-      }
-      else if (Math.Abs(normal.Y) > Math.Abs(normal.X) && Math.Abs(normal.Y) > Math.Abs(normal.Z))
-      {
-        v2 = new Vector3Cartesian(1 * Math.Sign(normal.Y), 0, 0);
-        v3 = new Vector3Cartesian(0, 0, 1 * Math.Sign(normal.Z));
-      }
-      else
-      {
-        v2 = new Vector3Cartesian(1 * Math.Sign(normal.Y), 0, 0);
-        v3 = new Vector3Cartesian(0, 1 * Math.Sign(normal.Z), 0);
-      }
-
-      // Orthonormalize v1 and v2 relative to normal
-      Vector3Cartesian n1 = v1;
-      Vector3Cartesian cn2 = v2 - Vector3Cartesian.ScalProd(v2, n1) * n1;
-      Vector3Cartesian n2 = cn2 / cn2.Norm();
-      Vector3Cartesian cn3 = v3 - Vector3Cartesian.ScalProd(v3, n1) * n1 - Vector3Cartesian.ScalProd(v3, n2) * n2;
-      Vector3Cartesian n3 = cn3 / cn3.Norm();
-
-      Vector3Cartesian vec = new Vector3Cartesian(p1.X, p1.Y, p1.Z);
-      Point3D pp1 = new Point3D(Vector3Cartesian.ScalProd(vec, n1), Vector3Cartesian.ScalProd(vec, n2), Vector3Cartesian.ScalProd(vec, n3));
-      mesh.Positions.Add(pp1);
-      vec = new Vector3Cartesian(p2.X, p2.Y, p2.Z);
-      Point3D pp2 = new Point3D(Vector3Cartesian.ScalProd(vec, n1), Vector3Cartesian.ScalProd(vec, n2), Vector3Cartesian.ScalProd(vec, n3));
-      mesh.Positions.Add(pp2);
-      vec = new Vector3Cartesian(p3.X, p3.Y, p3.Z);
-      Point3D pp3 = new Point3D(Vector3Cartesian.ScalProd(vec, n1), Vector3Cartesian.ScalProd(vec, n2), Vector3Cartesian.ScalProd(vec, n3));
-      mesh.Positions.Add(pp3);
-      vec = new Vector3Cartesian(p4.X, p4.Y, p4.Z);
-      Point3D pp4 = new Point3D(Vector3Cartesian.ScalProd(vec, n1), Vector3Cartesian.ScalProd(vec, n2), Vector3Cartesian.ScalProd(vec, n3));
-      mesh.Positions.Add(pp4);
-
-      mesh.TriangleIndices.Add(4);
-      mesh.TriangleIndices.Add(6);
-      mesh.TriangleIndices.Add(5);
-
-      mesh.TriangleIndices.Add(4);
-      mesh.TriangleIndices.Add(7);
-      mesh.TriangleIndices.Add(6);
-
       return mesh;
     }
+
+    #endregion
+
+    #region Line and Tube Methods
 
     /// <summary>
     /// Creates a tubular mesh along a parametric curve.
     /// </summary>
-    /// <param name="tStart">Start parameter value.</param>
-    /// <param name="tEnd">End parameter value.</param>
-    /// <param name="numSegments">Number of segments along the curve.</param>
-    /// <param name="baseRadius">Radius of the tube.</param>
-    /// <param name="numBaseDivs">Number of divisions around the tube circumference.</param>
-    /// <param name="curveFunc">Function that returns a point on the curve for parameter t.</param>
-    public static MeshGeometry3D CreateParametricCurveTube(double tStart, double tEnd, int numSegments, double baseRadius, int numBaseDivs, Func<double, Vector3Cartesian> curveFunc)
+    public static MeshGeometry3D CreateParametricCurveTube(double tStart, double tEnd, int numSegments, 
+                                                           double baseRadius, int numBaseDivs, 
+                                                           Func<double, Vector3Cartesian> curveFunc)
     {
       MeshGeometry3D mesh = new MeshGeometry3D();
 
       double dT = (tEnd - tStart) / numSegments;
-
-      // Calculate initial tangent direction
       Vector3Cartesian startPnt = curveFunc(tStart);
       Vector3Cartesian nextPnt = curveFunc(tStart + dT);
 
-      var tangent = nextPnt - startPnt;
-      Vector3Cartesian t1 = tangent / tangent.Norm();
-      Vector3Cartesian t2, t3;
-
-      // Find perpendicular vectors
-      (t2, t3) = GetPerpendicularVectors(tangent);
-
-      // Orthonormalize
-      Vector3Cartesian n1 = t1;
-      Vector3Cartesian cn2 = t2 - Vector3Cartesian.ScalProd(t2, n1) * n1;
-      Vector3Cartesian n2 = cn2 / cn2.Norm();
-      Vector3Cartesian cn3 = t3 - Vector3Cartesian.ScalProd(t3, n1) * n1 - Vector3Cartesian.ScalProd(t3, n2) * n2;
-      Vector3Cartesian n3 = cn3 / cn3.Norm();
-
-      // Add first ring of points
+      var (n1, n2, n3) = ComputeFrenetFrame(startPnt, nextPnt);
       AddTubeRing(mesh, startPnt, n1, n2, n3, baseRadius, numBaseDivs);
 
-      // Add remaining rings
       for (int h = 1; h <= numSegments; h++)
       {
         double T = tStart + (tEnd - tStart) * h / numSegments;
         Vector3Cartesian currentPnt = curveFunc(T);
         nextPnt = curveFunc(T + dT);
 
-        tangent = nextPnt - currentPnt;
-        if (tangent.Norm() < 1e-10) tangent = n1; // Use previous direction if points coincide
-        t1 = tangent / tangent.Norm();
-
-        (t2, t3) = GetPerpendicularVectors(tangent);
-
-        // Orthonormalize
-        n1 = t1;
-        cn2 = t2 - Vector3Cartesian.ScalProd(t2, n1) * n1;
-        n2 = cn2 / cn2.Norm();
-        cn3 = t3 - Vector3Cartesian.ScalProd(t3, n1) * n1 - Vector3Cartesian.ScalProd(t3, n2) * n2;
-        n3 = cn3 / cn3.Norm();
-
+        (n1, n2, n3) = ComputeFrenetFrame(currentPnt, nextPnt, n1);
         AddTubeRing(mesh, currentPnt, n1, n2, n3, baseRadius, numBaseDivs);
-
-        // Add triangles connecting this ring to previous
         AddTubeSegmentTriangles(mesh, h - 1, h, numBaseDivs);
       }
 
       return mesh;
+    }
+
+    /// <summary>
+    /// Creates a simple line (tube) between two points.
+    /// </summary>
+    public static MeshGeometry3D CreateSimpleLine(Vector3Cartesian point1, Vector3Cartesian point2, double baseRadius, int numBaseDivs)
+    {
+      return CreatePolyLine(new List<Vector3Cartesian> { point1, point2 }, baseRadius, numBaseDivs);
+    }
+
+    /// <summary>
+    /// Creates a polyline (connected tubes) through a series of points.
+    /// </summary>
+    public static MeshGeometry3D CreatePolyLine(List<Vector3Cartesian> points, double baseRadius, int numBaseDivs)
+    {
+      MeshGeometry3D mesh = new MeshGeometry3D();
+      int numSegments = points.Count - 1;
+
+      if (numSegments < 1) return mesh;
+
+      Vector3Cartesian startPnt = points[0];
+      Vector3Cartesian nextPnt = points[1];
+
+      var (n1, n2, n3) = ComputeFrenetFrame(startPnt, nextPnt);
+      AddTubeRing(mesh, startPnt, n1, n2, n3, baseRadius, numBaseDivs);
+
+      for (int h = 1; h <= numSegments; h++)
+      {
+        Vector3Cartesian currentPnt = points[h];
+
+        if (h < numSegments)
+        {
+          nextPnt = points[h + 1];
+          (n1, n2, n3) = ComputeFrenetFrame(currentPnt, nextPnt, n1);
+        }
+
+        AddTubeRing(mesh, currentPnt, n1, n2, n3, baseRadius, numBaseDivs);
+        AddTubeSegmentTriangles(mesh, h - 1, h, numBaseDivs);
+      }
+
+      return mesh;
+    }
+
+    #endregion
+
+    #region Private Helper Methods
+
+    /// <summary>
+    /// Computes a Frenet frame (tangent and two perpendicular vectors) for tube generation.
+    /// </summary>
+    private static (Vector3Cartesian n1, Vector3Cartesian n2, Vector3Cartesian n3) ComputeFrenetFrame(
+        Vector3Cartesian current, Vector3Cartesian next, Vector3Cartesian previousN1)
+    {
+      var tangent = next - current;
+      if (tangent.Norm() < 1e-10)
+        tangent = previousN1;
+
+      Vector3Cartesian n1 = tangent / tangent.Norm();
+      var (v2, v3) = GetPerpendicularVectors(tangent);
+
+      // Orthonormalize using Gram-Schmidt
+      Vector3Cartesian cn2 = v2 - Vector3Cartesian.ScalProd(v2, n1) * n1;
+      Vector3Cartesian n2 = cn2 / cn2.Norm();
+      Vector3Cartesian cn3 = v3 - Vector3Cartesian.ScalProd(v3, n1) * n1 - Vector3Cartesian.ScalProd(v3, n2) * n2;
+      Vector3Cartesian n3 = cn3 / cn3.Norm();
+
+      return (n1, n2, n3);
+    }
+
+    /// <summary>
+    /// Computes a Frenet frame for initial point (no previous direction).
+    /// </summary>
+    private static (Vector3Cartesian n1, Vector3Cartesian n2, Vector3Cartesian n3) ComputeFrenetFrame(
+        Vector3Cartesian current, Vector3Cartesian next)
+    {
+      var tangent = next - current;
+      Vector3Cartesian n1 = tangent / tangent.Norm();
+      var (v2, v3) = GetPerpendicularVectors(tangent);
+
+      // Orthonormalize using Gram-Schmidt
+      Vector3Cartesian cn2 = v2 - Vector3Cartesian.ScalProd(v2, n1) * n1;
+      Vector3Cartesian n2 = cn2 / cn2.Norm();
+      Vector3Cartesian cn3 = v3 - Vector3Cartesian.ScalProd(v3, n1) * n1 - Vector3Cartesian.ScalProd(v3, n2) * n2;
+      Vector3Cartesian n3 = cn3 / cn3.Norm();
+
+      return (n1, n2, n3);
     }
 
     /// <summary>
@@ -782,9 +680,9 @@ namespace WPF3DHelperLib
     }
 
     /// <summary>
-    /// Adds a ring of vertices around a point on the tube.
+    /// Adds a ring of vertices for tube generation.
     /// </summary>
-    private static void AddTubeRing(MeshGeometry3D mesh, Vector3Cartesian center, 
+    private static void AddTubeRing(MeshGeometry3D mesh, Vector3Cartesian center,
                                      Vector3Cartesian n1, Vector3Cartesian n2, Vector3Cartesian n3,
                                      double radius, int numDivs)
     {
@@ -795,10 +693,7 @@ namespace WPF3DHelperLib
       for (int i = 0; i < numDivs; i++)
       {
         double angle = 2 * Math.PI * i / numDivs;
-        double x = radius * Math.Cos(angle);
-        double y = radius * Math.Sin(angle);
-
-        Vector3Cartesian localVec = new Vector3Cartesian(x, y, 0);
+        Vector3Cartesian localVec = new Vector3Cartesian(radius * Math.Cos(angle), radius * Math.Sin(angle), 0);
 
         double newx = Vector3Cartesian.ScalProd(localVec, w2);
         double newy = Vector3Cartesian.ScalProd(localVec, w3);
@@ -809,97 +704,27 @@ namespace WPF3DHelperLib
     }
 
     /// <summary>
-    /// Adds triangles connecting two adjacent rings of a tube.
+    /// Adds triangles connecting two tube rings.
     /// </summary>
-    private static void AddTubeSegmentTriangles(MeshGeometry3D mesh, int ringIndex1, int ringIndex2, int numDivs)
+    private static void AddTubeSegmentTriangles(MeshGeometry3D mesh, int ring1, int ring2, int numDivs)
     {
       for (int i = 0; i < numDivs; i++)
       {
-        int ind1 = ringIndex1 * numDivs + i;
-        int ind2 = ringIndex1 * numDivs + (i + 1) % numDivs;
-        int ind3 = ringIndex2 * numDivs + i;
+        int i1 = ring1 * numDivs + i;
+        int i2 = ring1 * numDivs + (i + 1) % numDivs;
+        int i3 = ring2 * numDivs + i;
+        int i4 = ring2 * numDivs + (i + 1) % numDivs;
 
-        mesh.TriangleIndices.Add(ind1);
-        mesh.TriangleIndices.Add(ind2);
-        mesh.TriangleIndices.Add(ind3);
+        mesh.TriangleIndices.Add(i1);
+        mesh.TriangleIndices.Add(i2);
+        mesh.TriangleIndices.Add(i3);
 
-        ind1 = ringIndex1 * numDivs + (i + 1) % numDivs;
-        ind2 = ringIndex2 * numDivs + (i + 1) % numDivs;
-        ind3 = ringIndex2 * numDivs + i;
-
-        mesh.TriangleIndices.Add(ind1);
-        mesh.TriangleIndices.Add(ind2);
-        mesh.TriangleIndices.Add(ind3);
+        mesh.TriangleIndices.Add(i2);
+        mesh.TriangleIndices.Add(i4);
+        mesh.TriangleIndices.Add(i3);
       }
     }
 
-    public static MeshGeometry3D CreateSimpleLine(Vector3Cartesian point1, Vector3Cartesian point2, double baseRadius, int numBaseDivs)
-    {
-      List<Vector3Cartesian> points = new List<Vector3Cartesian>();
-      points.Add(point1);
-      points.Add(point2);
-
-      int numSegments = points.Count - 1;
-
-      return CreatePolyLine(points, baseRadius, numBaseDivs);
-    }
-
-    public static MeshGeometry3D CreatePolyLine(List<Vector3Cartesian> points, double baseRadius, int numBaseDivs)
-    {
-      int numSegments = points.Count - 1;
-      MeshGeometry3D mesh = new MeshGeometry3D();
-
-      if (numSegments < 1) return mesh;
-
-      // Add base points
-      Vector3Cartesian startPnt = points[0];
-      Vector3Cartesian nextPnt = points[1];
-
-      var normal = nextPnt - startPnt;
-      Vector3Cartesian v1 = normal / normal.Norm();
-      Vector3Cartesian v2, v3;
-
-      (v2, v3) = GetPerpendicularVectors(normal);
-
-      // Orthonormalize
-      Vector3Cartesian n1 = v1;
-      Vector3Cartesian cn2 = v2 - Vector3Cartesian.ScalProd(v2, n1) * n1;
-      Vector3Cartesian n2 = cn2 / cn2.Norm();
-      Vector3Cartesian cn3 = v3 - Vector3Cartesian.ScalProd(v3, n1) * n1 - Vector3Cartesian.ScalProd(v3, n2) * n2;
-      Vector3Cartesian n3 = cn3 / cn3.Norm();
-
-      // Add first ring
-      AddTubeRing(mesh, startPnt, n1, n2, n3, baseRadius, numBaseDivs);
-
-      // Add remaining rings and triangles
-      for (int h = 1; h <= numSegments; h++)
-      {
-        Vector3Cartesian currentPnt = points[h];
-        
-        if (h < numSegments)
-        {
-          nextPnt = points[h + 1];
-          normal = nextPnt - currentPnt;
-        }
-        // else: use previous normal direction for last point
-
-        if (normal.Norm() > 1e-10)
-        {
-          v1 = normal / normal.Norm();
-          (v2, v3) = GetPerpendicularVectors(normal);
-
-          n1 = v1;
-          cn2 = v2 - Vector3Cartesian.ScalProd(v2, n1) * n1;
-          n2 = cn2 / cn2.Norm();
-          cn3 = v3 - Vector3Cartesian.ScalProd(v3, n1) * n1 - Vector3Cartesian.ScalProd(v3, n2) * n2;
-          n3 = cn3 / cn3.Norm();
-        }
-
-        AddTubeRing(mesh, currentPnt, n1, n2, n3, baseRadius, numBaseDivs);
-        AddTubeSegmentTriangles(mesh, h - 1, h, numBaseDivs);
-      }
-
-      return mesh;
-    }
+    #endregion
   }
 }
