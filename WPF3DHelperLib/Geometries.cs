@@ -635,25 +635,6 @@ namespace WPF3DHelperLib
       mesh.TriangleIndices.Add(3);
       mesh.TriangleIndices.Add(2);
 
-      // dodajemo i transformirane
-      // rotacija oko X osi
-      //Vector3Cartesian w1 = new Vector3Cartesian(1, 0, 0);
-      //Vector3Cartesian w2 = new Vector3Cartesian(0, Math.Cos(30 / 180.0 * Math.PI), -Math.Sin(30 / 180.0 * Math.PI));
-      //Vector3Cartesian w3 = new Vector3Cartesian(0, Math.Sin(30 / 180.0 * Math.PI), Math.Cos(30 / 180.0 * Math.PI));
-
-      //Vector3Cartesian vec = new Vector3Cartesian(p1.X, p1.Y, p1.Z);
-      //Point3D pp1 = new Point3D(Vector3Cartesian.ScalProd(vec, w1), Vector3Cartesian.ScalProd(vec, w2), Vector3Cartesian.ScalProd(vec, w3));
-      //mesh.Positions.Add(pp1);
-      //vec = new Vector3Cartesian(p2.X, p2.Y, p2.Z);
-      //Point3D pp2 = new Point3D(Vector3Cartesian.ScalProd(vec, w1), Vector3Cartesian.ScalProd(vec, w2), Vector3Cartesian.ScalProd(vec, w3));
-      //mesh.Positions.Add(pp2);
-      //vec = new Vector3Cartesian(p3.X, p3.Y, p3.Z);
-      //Point3D pp3 = new Point3D(Vector3Cartesian.ScalProd(vec, w1), Vector3Cartesian.ScalProd(vec, w2), Vector3Cartesian.ScalProd(vec, w3));
-      //mesh.Positions.Add(pp3);
-      //vec = new Vector3Cartesian(p4.X, p4.Y, p4.Z);
-      //Point3D pp4 = new Point3D(Vector3Cartesian.ScalProd(vec, w1), Vector3Cartesian.ScalProd(vec, w2), Vector3Cartesian.ScalProd(vec, w3));
-      //mesh.Positions.Add(pp4);
-
       Vector3Cartesian startPnt = new Vector3Cartesian(0, 0, 0);
       Vector3Cartesian nextPnt = new Vector3Cartesian(0.1, 0.1, 1);
 
@@ -678,7 +659,7 @@ namespace WPF3DHelperLib
         v3 = new Vector3Cartesian(0, 1 * Math.Sign(normal.Z), 0);
       }
 
-      // sad ortonormalizirati v1 i v2 prema normali
+      // Orthonormalize v1 and v2 relative to normal
       Vector3Cartesian n1 = v1;
       Vector3Cartesian cn2 = v2 - Vector3Cartesian.ScalProd(v2, n1) * n1;
       Vector3Cartesian n2 = cn2 / cn2.Norm();
@@ -708,175 +689,148 @@ namespace WPF3DHelperLib
 
       return mesh;
     }
-    public static Vector3Cartesian Func(double t)
-    {
-      Vector3Cartesian ret = new Vector3Cartesian(5 * Math.Sin(t), 3 * t, 5 * Math.Cos(t));
-      // Vector3Cartesian ret = new Vector3Cartesian(5 * t, 3 * t, 0.5 * t);
-      return ret;
-    }
-    public static Vector3Cartesian Func1(double t)
-    {
-      Vector3Cartesian ret = new Vector3Cartesian(2 * t, 0.3 * Math.Sqrt(t * 2000), 2 * t);
-      return ret;
-    }
 
-    public static MeshGeometry3D CreateLine(double tStart, double tEnd, int numSegments, double baseRadius, int numBaseDivs)
+    /// <summary>
+    /// Creates a tubular mesh along a parametric curve.
+    /// </summary>
+    /// <param name="tStart">Start parameter value.</param>
+    /// <param name="tEnd">End parameter value.</param>
+    /// <param name="numSegments">Number of segments along the curve.</param>
+    /// <param name="baseRadius">Radius of the tube.</param>
+    /// <param name="numBaseDivs">Number of divisions around the tube circumference.</param>
+    /// <param name="curveFunc">Function that returns a point on the curve for parameter t.</param>
+    public static MeshGeometry3D CreateParametricCurveTube(double tStart, double tEnd, int numSegments, double baseRadius, int numBaseDivs, Func<double, Vector3Cartesian> curveFunc)
     {
-      // funkcija je f(t) = sin(t), cos(t), t
       MeshGeometry3D mesh = new MeshGeometry3D();
 
-      double T = tStart;
       double dT = (tEnd - tStart) / numSegments;
 
-      // add base points
-      Vector3Cartesian baseCenter = Func(T);
+      // Calculate initial tangent direction
+      Vector3Cartesian startPnt = curveFunc(tStart);
+      Vector3Cartesian nextPnt = curveFunc(tStart + dT);
 
-      // vektor normale
-      Vector3Cartesian startPnt = Func(T);
-      Vector3Cartesian nextPnt = Func(T + dT);
+      var tangent = nextPnt - startPnt;
+      Vector3Cartesian t1 = tangent / tangent.Norm();
+      Vector3Cartesian t2, t3;
 
-      var normal = nextPnt - startPnt;
-      Vector3Cartesian v1 = normal / normal.Norm();
-      Vector3Cartesian v2;
-      Vector3Cartesian v3;
+      // Find perpendicular vectors
+      (t2, t3) = GetPerpendicularVectors(tangent);
 
-      if (Math.Abs(normal.X) > Math.Abs(normal.Y) && Math.Abs(normal.X) > Math.Abs(normal.Z))
+      // Orthonormalize
+      Vector3Cartesian n1 = t1;
+      Vector3Cartesian cn2 = t2 - Vector3Cartesian.ScalProd(t2, n1) * n1;
+      Vector3Cartesian n2 = cn2 / cn2.Norm();
+      Vector3Cartesian cn3 = t3 - Vector3Cartesian.ScalProd(t3, n1) * n1 - Vector3Cartesian.ScalProd(t3, n2) * n2;
+      Vector3Cartesian n3 = cn3 / cn3.Norm();
+
+      // Add first ring of points
+      AddTubeRing(mesh, startPnt, n1, n2, n3, baseRadius, numBaseDivs);
+
+      // Add remaining rings
+      for (int h = 1; h <= numSegments; h++)
       {
-        v2 = new Vector3Cartesian(0, 1 * Math.Sign(normal.Y), 0);
-        v3 = new Vector3Cartesian(0, 0, 1 * Math.Sign(normal.Z));
+        double T = tStart + (tEnd - tStart) * h / numSegments;
+        Vector3Cartesian currentPnt = curveFunc(T);
+        nextPnt = curveFunc(T + dT);
+
+        tangent = nextPnt - currentPnt;
+        if (tangent.Norm() < 1e-10) tangent = n1; // Use previous direction if points coincide
+        t1 = tangent / tangent.Norm();
+
+        (t2, t3) = GetPerpendicularVectors(tangent);
+
+        // Orthonormalize
+        n1 = t1;
+        cn2 = t2 - Vector3Cartesian.ScalProd(t2, n1) * n1;
+        n2 = cn2 / cn2.Norm();
+        cn3 = t3 - Vector3Cartesian.ScalProd(t3, n1) * n1 - Vector3Cartesian.ScalProd(t3, n2) * n2;
+        n3 = cn3 / cn3.Norm();
+
+        AddTubeRing(mesh, currentPnt, n1, n2, n3, baseRadius, numBaseDivs);
+
+        // Add triangles connecting this ring to previous
+        AddTubeSegmentTriangles(mesh, h - 1, h, numBaseDivs);
       }
-      else if (Math.Abs(normal.Y) > Math.Abs(normal.X) && Math.Abs(normal.Y) > Math.Abs(normal.Z))
+
+      return mesh;
+    }
+
+    /// <summary>
+    /// Gets two perpendicular vectors to the given direction.
+    /// </summary>
+    private static (Vector3Cartesian, Vector3Cartesian) GetPerpendicularVectors(Vector3Cartesian direction)
+    {
+      Vector3Cartesian v2, v3;
+
+      if (Math.Abs(direction.X) > Math.Abs(direction.Y) && Math.Abs(direction.X) > Math.Abs(direction.Z))
       {
-        v2 = new Vector3Cartesian(1 * Math.Sign(normal.Y), 0, 0);
-        v3 = new Vector3Cartesian(0, 0, 1 * Math.Sign(normal.Z));
+        v2 = direction.Y == 0 ? new Vector3Cartesian(0, 1, 0) : new Vector3Cartesian(0, Math.Sign(direction.Y), 0);
+        v3 = direction.Z == 0 ? new Vector3Cartesian(0, 0, 1) : new Vector3Cartesian(0, 0, Math.Sign(direction.Z));
+      }
+      else if (Math.Abs(direction.Y) > Math.Abs(direction.X) && Math.Abs(direction.Y) > Math.Abs(direction.Z))
+      {
+        v2 = direction.X == 0 ? new Vector3Cartesian(1, 0, 0) : new Vector3Cartesian(Math.Sign(direction.X), 0, 0);
+        v3 = direction.Z == 0 ? new Vector3Cartesian(0, 0, 1) : new Vector3Cartesian(0, 0, Math.Sign(direction.Z));
       }
       else
       {
-        v2 = new Vector3Cartesian(1 * Math.Sign(normal.Y), 0, 0);
-        v3 = new Vector3Cartesian(0, 1 * Math.Sign(normal.Z), 0);
+        v2 = direction.X == 0 ? new Vector3Cartesian(1, 0, 0) : new Vector3Cartesian(Math.Sign(direction.X), 0, 0);
+        v3 = direction.Y == 0 ? new Vector3Cartesian(0, 1, 0) : new Vector3Cartesian(0, Math.Sign(direction.Y), 0);
       }
 
-      // sad ortonormalizirati v1 i v2 prema normali
-      Vector3Cartesian n1 = v1;
-      Vector3Cartesian cn2 = v2 - Vector3Cartesian.ScalProd(v2, n1) * n1;
-      Vector3Cartesian n2 = cn2 / cn2.Norm();
-      Vector3Cartesian cn3 = v3 - Vector3Cartesian.ScalProd(v3, n1) * n1 - Vector3Cartesian.ScalProd(v3, n2) * n2;
-      Vector3Cartesian n3 = cn3 / cn3.Norm();
+      return (v2, v3);
+    }
 
-      for (int i = 0; i < numBaseDivs; i++)
+    /// <summary>
+    /// Adds a ring of vertices around a point on the tube.
+    /// </summary>
+    private static void AddTubeRing(MeshGeometry3D mesh, Vector3Cartesian center, 
+                                     Vector3Cartesian n1, Vector3Cartesian n2, Vector3Cartesian n3,
+                                     double radius, int numDivs)
+    {
+      Vector3Cartesian w1 = new Vector3Cartesian(n1.X, n2.X, n3.X);
+      Vector3Cartesian w2 = new Vector3Cartesian(n1.Y, n2.Y, n3.Y);
+      Vector3Cartesian w3 = new Vector3Cartesian(n1.Z, n2.Z, n3.Z);
+
+      for (int i = 0; i < numDivs; i++)
       {
-        double angle = 2 * Math.PI * i / numBaseDivs;
-        double x = baseRadius * Math.Cos(angle); // + Func(T).X;
-        double y = baseRadius * Math.Sin(angle); // + Func(T).Y;
+        double angle = 2 * Math.PI * i / numDivs;
+        double x = radius * Math.Cos(angle);
+        double y = radius * Math.Sin(angle);
 
-        Vector3Cartesian vec = new Vector3Cartesian(x, y, 0);
+        Vector3Cartesian localVec = new Vector3Cartesian(x, y, 0);
 
-        Vector3Cartesian w1 = new Vector3Cartesian(n1.X, n2.X, n3.X);
-        Vector3Cartesian w2 = new Vector3Cartesian(n1.Y, n2.Y, n3.Y);
-        Vector3Cartesian w3 = new Vector3Cartesian(n1.Z, n2.Z, n3.Z);
+        double newx = Vector3Cartesian.ScalProd(localVec, w2);
+        double newy = Vector3Cartesian.ScalProd(localVec, w3);
+        double newz = Vector3Cartesian.ScalProd(localVec, w1);
 
-        double newx = Vector3Cartesian.ScalProd(vec, w2);
-        double newy = Vector3Cartesian.ScalProd(vec, w3);
-        double newz = Vector3Cartesian.ScalProd(vec, w1);
-
-        //double newx = Vector3Cartesian.ScalProd(vec, n2);
-        //double newy = Vector3Cartesian.ScalProd(vec, n3);
-        //double newz = Vector3Cartesian.ScalProd(vec, n1);
-
-        Point3D p = new Point3D(startPnt.X + newx, startPnt.Y + newy, startPnt.Z + newz);
-        mesh.Positions.Add(p);
+        mesh.Positions.Add(new Point3D(center.X + newx, center.Y + newy, center.Z + newz));
       }
+    }
 
-      startPnt = nextPnt;
-      for (int h = 1; h <= numSegments; h++)
+    /// <summary>
+    /// Adds triangles connecting two adjacent rings of a tube.
+    /// </summary>
+    private static void AddTubeSegmentTriangles(MeshGeometry3D mesh, int ringIndex1, int ringIndex2, int numDivs)
+    {
+      for (int i = 0; i < numDivs; i++)
       {
-        T = tStart + (tEnd - tStart) * h / numSegments;
+        int ind1 = ringIndex1 * numDivs + i;
+        int ind2 = ringIndex1 * numDivs + (i + 1) % numDivs;
+        int ind3 = ringIndex2 * numDivs + i;
 
-        nextPnt = Func(T + dT);
+        mesh.TriangleIndices.Add(ind1);
+        mesh.TriangleIndices.Add(ind2);
+        mesh.TriangleIndices.Add(ind3);
 
-        normal = nextPnt - startPnt;
-        v1 = normal / normal.Norm();
+        ind1 = ringIndex1 * numDivs + (i + 1) % numDivs;
+        ind2 = ringIndex2 * numDivs + (i + 1) % numDivs;
+        ind3 = ringIndex2 * numDivs + i;
 
-        if (Math.Abs(normal.X) > Math.Abs(normal.Y) && Math.Abs(normal.X) > Math.Abs(normal.Z))
-        {
-          v2 = new Vector3Cartesian(0, 1 * Math.Sign(normal.Y), 0);
-          v3 = new Vector3Cartesian(0, 0, 1 * Math.Sign(normal.Z));
-        }
-        else if (Math.Abs(normal.Y) > Math.Abs(normal.X) && Math.Abs(normal.Y) > Math.Abs(normal.Z))
-        {
-          v2 = new Vector3Cartesian(1 * Math.Sign(normal.Y), 0, 0);
-          v3 = new Vector3Cartesian(0, 0, 1 * Math.Sign(normal.Z));
-        }
-        else
-        {
-          v2 = new Vector3Cartesian(1 * Math.Sign(normal.Y), 0, 0);
-          v3 = new Vector3Cartesian(0, 1 * Math.Sign(normal.Z), 0);
-        }
-
-        // sad ortonormalizirati v1 i v2 prema normali
-        n1 = v1;
-        cn2 = v2 - Vector3Cartesian.ScalProd(v2, n1) * n1;
-        n2 = cn2 / cn2.Norm();
-        cn3 = v3 - Vector3Cartesian.ScalProd(v3, n1) * n1 - Vector3Cartesian.ScalProd(v3, n2) * n2;
-        n3 = cn3 / cn3.Norm();
-
-
-        // add layer points
-        for (int i = 0; i < numBaseDivs; i++)
-        {
-          double angle = 2 * Math.PI * i / numBaseDivs;
-          double x = baseRadius * Math.Cos(angle); // + Func(T).X;
-          double y = baseRadius * Math.Sin(angle); // + Func(T).Y;
-
-          Vector3Cartesian vec = new Vector3Cartesian(x, y, 0);
-
-          Vector3Cartesian w1 = new Vector3Cartesian(n1.X, n2.X, n3.X);
-          Vector3Cartesian w2 = new Vector3Cartesian(n1.Y, n2.Y, n3.Y);
-          Vector3Cartesian w3 = new Vector3Cartesian(n1.Z, n2.Z, n3.Z);
-
-          double newx = Vector3Cartesian.ScalProd(vec, w2);
-          double newy = Vector3Cartesian.ScalProd(vec, w3);
-          double newz = Vector3Cartesian.ScalProd(vec, w1);
-
-          //double newx = Vector3Cartesian.ScalProd(vec, n3);
-          //double newy = Vector3Cartesian.ScalProd(vec, n2);
-          //double newz = Vector3Cartesian.ScalProd(vec, n1);
-
-          Point3D p = new Point3D(Func(T).X + newx, Func(T).Y + newy, Func(T).Z + newz);
-
-
-          //double angle = 2 * Math.PI * i / numBaseDivs;
-          //double x = baseRadius * Math.Cos(angle) + Func(T).X;
-          //double y = baseRadius * Math.Sin(angle) + Func(T).Y;
-
-          //Point3D p = new Point3D(x, y, Func(T).Z);
-
-          mesh.Positions.Add(p);
-        }
-
-        // sad dodati triangle za layer
-        for (int i = 0; i < numBaseDivs; i++)
-        {
-          int ind1 = (h - 1) * numBaseDivs + i;
-          int ind2 = (h - 1) * numBaseDivs + (i + 1) % numBaseDivs;
-          int ind3 = h * numBaseDivs + i;
-
-          mesh.TriangleIndices.Add(ind1);
-          mesh.TriangleIndices.Add(ind2);
-          mesh.TriangleIndices.Add(ind3);
-
-          ind1 = (h - 1) * numBaseDivs + (i + 1) % numBaseDivs;
-          ind2 = h * numBaseDivs + (i + 1) % numBaseDivs;
-          ind3 = h * numBaseDivs + i;
-
-          mesh.TriangleIndices.Add(ind1);
-          mesh.TriangleIndices.Add(ind2);
-          mesh.TriangleIndices.Add(ind3);
-        }
+        mesh.TriangleIndices.Add(ind1);
+        mesh.TriangleIndices.Add(ind2);
+        mesh.TriangleIndices.Add(ind3);
       }
-
-
-      return mesh;
     }
 
     public static MeshGeometry3D CreateSimpleLine(Vector3Cartesian point1, Vector3Cartesian point2, double baseRadius, int numBaseDivs)
@@ -893,205 +847,57 @@ namespace WPF3DHelperLib
     public static MeshGeometry3D CreatePolyLine(List<Vector3Cartesian> points, double baseRadius, int numBaseDivs)
     {
       int numSegments = points.Count - 1;
-      // funkcija je f(t) = sin(t), cos(t), t
       MeshGeometry3D mesh = new MeshGeometry3D();
 
-      //double T = tStart;
-      //double dT = (tEnd - tStart) / numSegments;
+      if (numSegments < 1) return mesh;
 
-      // add base points
-      Vector3Cartesian baseCenter = points[0];
-
-      // vektor normale
+      // Add base points
       Vector3Cartesian startPnt = points[0];
       Vector3Cartesian nextPnt = points[1];
 
       var normal = nextPnt - startPnt;
       Vector3Cartesian v1 = normal / normal.Norm();
-      Vector3Cartesian v2;
-      Vector3Cartesian v3;
+      Vector3Cartesian v2, v3;
 
-      if (Math.Abs(normal.X) > Math.Abs(normal.Y) && Math.Abs(normal.X) > Math.Abs(normal.Z))
-      {
-        v2 = normal.Y == 0
-          ? new Vector3Cartesian(0, 1, 0)
-          : new Vector3Cartesian(0, 1 * Math.Sign(normal.Y), 0);
+      (v2, v3) = GetPerpendicularVectors(normal);
 
-        v3 = normal.Z == 0
-          ? new Vector3Cartesian(0, 0, 1)
-          : new Vector3Cartesian(0, 0, 1 * Math.Sign(normal.Z));
-      }
-      else if (Math.Abs(normal.Y) > Math.Abs(normal.X) && Math.Abs(normal.Y) > Math.Abs(normal.Z))
-      {
-        v2 = normal.X == 0
-          ? new Vector3Cartesian(1, 0, 0)
-          : new Vector3Cartesian(1 * Math.Sign(normal.X), 0, 0);
-        
-        v3 = normal.Z == 0
-          ? new Vector3Cartesian(0, 0, 1)
-          : new Vector3Cartesian(0, 0, 1 * Math.Sign(normal.Z));
-      }
-      else
-      {
-        v2 = normal.X == 0
-          ? new Vector3Cartesian(1, 0, 0)
-          : new Vector3Cartesian(1 * Math.Sign(normal.X), 0, 0);
-
-        v3 = normal.Y == 0
-          ? new Vector3Cartesian(0, 1, 0)
-          : new Vector3Cartesian(0, 1 * Math.Sign(normal.Y), 0);
-      }
-
-      // sad ortonormalizirati v1 i v2 prema normali
+      // Orthonormalize
       Vector3Cartesian n1 = v1;
       Vector3Cartesian cn2 = v2 - Vector3Cartesian.ScalProd(v2, n1) * n1;
       Vector3Cartesian n2 = cn2 / cn2.Norm();
       Vector3Cartesian cn3 = v3 - Vector3Cartesian.ScalProd(v3, n1) * n1 - Vector3Cartesian.ScalProd(v3, n2) * n2;
       Vector3Cartesian n3 = cn3 / cn3.Norm();
 
-      for (int i = 0; i < numBaseDivs; i++)
+      // Add first ring
+      AddTubeRing(mesh, startPnt, n1, n2, n3, baseRadius, numBaseDivs);
+
+      // Add remaining rings and triangles
+      for (int h = 1; h <= numSegments; h++)
       {
-        double angle = 2 * Math.PI * i / numBaseDivs;
-        double x = baseRadius * Math.Cos(angle); // + Func(T).X;
-        double y = baseRadius * Math.Sin(angle); // + Func(T).Y;
-
-        Vector3Cartesian vec = new Vector3Cartesian(x, y, 0);
-
-        Vector3Cartesian w1 = new Vector3Cartesian(n1.X, n2.X, n3.X);
-        Vector3Cartesian w2 = new Vector3Cartesian(n1.Y, n2.Y, n3.Y);
-        Vector3Cartesian w3 = new Vector3Cartesian(n1.Z, n2.Z, n3.Z);
-
-        double newx = Vector3Cartesian.ScalProd(vec, w2);
-        double newy = Vector3Cartesian.ScalProd(vec, w3);
-        double newz = Vector3Cartesian.ScalProd(vec, w1);
-
-        //double newx = Vector3Cartesian.ScalProd(vec, n2);
-        //double newy = Vector3Cartesian.ScalProd(vec, n3);
-        //double newz = Vector3Cartesian.ScalProd(vec, n1);
-
-        Point3D p = new Point3D(startPnt.X + newx, startPnt.Y + newy, startPnt.Z + newz);
-        mesh.Positions.Add(p);
-      }
-
-      startPnt = nextPnt;
-      for (int h = 1; h < numSegments; h++)
-      {
-        // T = tStart + (tEnd - tStart) * h / numSegments;
-
-        nextPnt = points[h+1];
-
-        normal = nextPnt - startPnt;
-        v1 = normal / normal.Norm();
-
-        //if (Math.Abs(normal.X) > Math.Abs(normal.Y) && Math.Abs(normal.X) > Math.Abs(normal.Z))
-        //{
-        //  v2 = new Vector3Cartesian(0, 1 * Math.Sign(normal.Y), 0);
-        //  v3 = new Vector3Cartesian(0, 0, 1 * Math.Sign(normal.Z));
-        //}
-        //else if (Math.Abs(normal.Y) > Math.Abs(normal.X) && Math.Abs(normal.Y) > Math.Abs(normal.Z))
-        //{
-        //  v2 = new Vector3Cartesian(1 * Math.Sign(normal.Y), 0, 0);
-        //  v3 = new Vector3Cartesian(0, 0, 1 * Math.Sign(normal.Z));
-        //}
-        //else
-        //{
-        //  v2 = new Vector3Cartesian(1 * Math.Sign(normal.Y), 0, 0);
-        //  v3 = new Vector3Cartesian(0, 1 * Math.Sign(normal.Z), 0);
-        //}
-
-        if (Math.Abs(normal.X) > Math.Abs(normal.Y) && Math.Abs(normal.X) > Math.Abs(normal.Z))
-        {
-          v2 = normal.Y == 0
-            ? new Vector3Cartesian(0, 1, 0)
-            : new Vector3Cartesian(0, 1 * Math.Sign(normal.Y), 0);
-
-          v3 = normal.Z == 0
-            ? new Vector3Cartesian(0, 0, 1)
-            : new Vector3Cartesian(0, 0, 1 * Math.Sign(normal.Z));
-        }
-        else if (Math.Abs(normal.Y) > Math.Abs(normal.X) && Math.Abs(normal.Y) > Math.Abs(normal.Z))
-        {
-          v2 = normal.X == 0
-            ? new Vector3Cartesian(1, 0, 0)
-            : new Vector3Cartesian(1 * Math.Sign(normal.X), 0, 0);
-
-          v3 = normal.Z == 0
-            ? new Vector3Cartesian(0, 0, 1)
-            : new Vector3Cartesian(0, 0, 1 * Math.Sign(normal.Z));
-        }
-        else
-        {
-          v2 = normal.X == 0
-            ? new Vector3Cartesian(1, 0, 0)
-            : new Vector3Cartesian(1 * Math.Sign(normal.X), 0, 0);
-
-          v3 = normal.Y == 0
-            ? new Vector3Cartesian(0, 1, 0)
-            : new Vector3Cartesian(0, 1 * Math.Sign(normal.Y), 0);
-        }
+        Vector3Cartesian currentPnt = points[h];
         
-        // sad ortonormalizirati v1 i v2 prema normali
-        n1 = v1;
-        cn2 = v2 - Vector3Cartesian.ScalProd(v2, n1) * n1;
-        n2 = cn2 / cn2.Norm();
-        cn3 = v3 - Vector3Cartesian.ScalProd(v3, n1) * n1 - Vector3Cartesian.ScalProd(v3, n2) * n2;
-        n3 = cn3 / cn3.Norm();
-
-
-        // add layer points
-        for (int i = 0; i < numBaseDivs; i++)
+        if (h < numSegments)
         {
-          double angle = 2 * Math.PI * i / numBaseDivs;
-          double x = baseRadius * Math.Cos(angle); // + Func(T).X;
-          double y = baseRadius * Math.Sin(angle); // + Func(T).Y;
+          nextPnt = points[h + 1];
+          normal = nextPnt - currentPnt;
+        }
+        // else: use previous normal direction for last point
 
-          Vector3Cartesian vec = new Vector3Cartesian(x, y, 0);
+        if (normal.Norm() > 1e-10)
+        {
+          v1 = normal / normal.Norm();
+          (v2, v3) = GetPerpendicularVectors(normal);
 
-          Vector3Cartesian w1 = new Vector3Cartesian(n1.X, n2.X, n3.X);
-          Vector3Cartesian w2 = new Vector3Cartesian(n1.Y, n2.Y, n3.Y);
-          Vector3Cartesian w3 = new Vector3Cartesian(n1.Z, n2.Z, n3.Z);
-
-          double newx = Vector3Cartesian.ScalProd(vec, w2);
-          double newy = Vector3Cartesian.ScalProd(vec, w3);
-          double newz = Vector3Cartesian.ScalProd(vec, w1);
-
-          //double newx = Vector3Cartesian.ScalProd(vec, n3);
-          //double newy = Vector3Cartesian.ScalProd(vec, n2);
-          //double newz = Vector3Cartesian.ScalProd(vec, n1);
-
-          Point3D p = new Point3D(points[h].X + newx, points[h].Y + newy, points[h].Z + newz);
-
-
-          //double angle = 2 * Math.PI * i / numBaseDivs;
-          //double x = baseRadius * Math.Cos(angle) + Func(T).X;
-          //double y = baseRadius * Math.Sin(angle) + Func(T).Y;
-
-          //Point3D p = new Point3D(x, y, Func(T).Z);
-
-          mesh.Positions.Add(p);
+          n1 = v1;
+          cn2 = v2 - Vector3Cartesian.ScalProd(v2, n1) * n1;
+          n2 = cn2 / cn2.Norm();
+          cn3 = v3 - Vector3Cartesian.ScalProd(v3, n1) * n1 - Vector3Cartesian.ScalProd(v3, n2) * n2;
+          n3 = cn3 / cn3.Norm();
         }
 
-        // sad dodati triangle za layer
-        for (int i = 0; i < numBaseDivs; i++)
-        {
-          int ind1 = (h - 1) * numBaseDivs + i;
-          int ind2 = (h - 1) * numBaseDivs + (i + 1) % numBaseDivs;
-          int ind3 = h * numBaseDivs + i;
-
-          mesh.TriangleIndices.Add(ind1);
-          mesh.TriangleIndices.Add(ind2);
-          mesh.TriangleIndices.Add(ind3);
-
-          ind1 = (h - 1) * numBaseDivs + (i + 1) % numBaseDivs;
-          ind2 = h * numBaseDivs + (i + 1) % numBaseDivs;
-          ind3 = h * numBaseDivs + i;
-
-          mesh.TriangleIndices.Add(ind1);
-          mesh.TriangleIndices.Add(ind2);
-          mesh.TriangleIndices.Add(ind3);
-        }
+        AddTubeRing(mesh, currentPnt, n1, n2, n3, baseRadius, numBaseDivs);
+        AddTubeSegmentTriangles(mesh, h - 1, h, numBaseDivs);
       }
-
 
       return mesh;
     }

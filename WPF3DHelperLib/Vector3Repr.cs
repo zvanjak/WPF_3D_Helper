@@ -5,8 +5,12 @@ using System.Text;
 using System.Threading.Tasks;
 using MML;
 
-namespace MML_VectorField3D_Visualizer
+namespace WPF3DHelperLib
 {
+  /// <summary>
+  /// Represents a 3D vector at a specific position in space.
+  /// Used for vector field visualization.
+  /// </summary>
   public class Vector3Repr
   {
     public Vector3Cartesian Pos;
