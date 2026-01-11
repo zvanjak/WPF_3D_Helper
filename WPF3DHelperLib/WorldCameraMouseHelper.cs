@@ -134,35 +134,13 @@ namespace WPF3DHelperLib
     /// Adds default lighting to a 3D model group.
     /// </summary>
     /// <param name="model3DGroup">The model group to add lights to.</param>
+    /// <remarks>
+    /// This method delegates to <see cref="LightingSetup.AddThreePointLighting"/>.
+    /// For more lighting options, use the <see cref="LightingSetup"/> class directly.
+    /// </remarks>
     public void InitLights(Model3DGroup model3DGroup)
     {
-      // Ambient light provides base illumination for all surfaces
-      AmbientLight ambLight = new AmbientLight { Color = System.Windows.Media.Color.FromRgb(80, 80, 80) };
-      model3DGroup.Children.Add(ambLight);
-
-      // Main directional light from upper-front-right
-      DirectionalLight mainLight = new DirectionalLight
-      {
-        Color = System.Windows.Media.Colors.White,
-        Direction = new Vector3D(-1, -1, -1)
-      };
-      model3DGroup.Children.Add(mainLight);
-
-      // Fill light from opposite direction (softer)
-      DirectionalLight fillLight = new DirectionalLight
-      {
-        Color = System.Windows.Media.Color.FromRgb(180, 180, 180),
-        Direction = new Vector3D(1, 0.5, 0.5)
-      };
-      model3DGroup.Children.Add(fillLight);
-
-      // Back light to highlight edges
-      DirectionalLight backLight = new DirectionalLight
-      {
-        Color = System.Windows.Media.Color.FromRgb(100, 100, 100),
-        Direction = new Vector3D(0, 1, -0.5)
-      };
-      model3DGroup.Children.Add(backLight);
+      LightingSetup.AddThreePointLighting(model3DGroup);
     }
 
     #region Mouse Event Handlers
