@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
 namespace WPF3DHelperLib
@@ -544,6 +546,152 @@ namespace WPF3DHelperLib
     }
 
     #endregion
+  }
+
+  #endregion
+
+  #region Canvas Export Utilities
+
+  /// <summary>
+  /// Provides utilities for exporting 2D canvas content to image files.
+  /// </summary>
+  public static class Canvas2DExport
+  {
+    /// <summary>
+    /// Exports a Canvas to an image file. Supports PNG, JPEG, and BMP formats.
+    /// </summary>
+    /// <param name="canvas">The Canvas to export.</param>
+    /// <param name="filePath">The file path to save the image to.</param>
+    /// <param name="customWidth">Optional custom width in pixels. If null, uses canvas ActualWidth.</param>
+    /// <param name="customHeight">Optional custom height in pixels. If null, uses canvas ActualHeight.</param>
+    /// <param name="dpi">DPI for the output image (default 96).</param>
+    /// <param name="backgroundColor">Background color for the image. If null, uses white.</param>
+    public static void ExportCanvasToImage(Canvas canvas, string filePath, 
+      int? customWidth = null, int? customHeight = null, double dpi = 96, Color? backgroundColor = null)
+    {
+      if (canvas == null) throw new ArgumentNullException(nameof(canvas));
+
+      // Use canvas actual size or custom size
+      int pixelWidth = customWidth ?? (int)canvas.ActualWidth;
+      int pixelHeight = customHeight ?? (int)canvas.ActualHeight;
+
+      if (pixelWidth <= 0 || pixelHeight <= 0)
+      {
+        pixelWidth = 1920;
+        pixelHeight = 1080;
+      }
+
+      Color bgColor = backgroundColor ?? Colors.White;
+
+      // Create a DrawingVisual with background and canvas content
+      var drawingVisual = new DrawingVisual();
+      using (var dc = drawingVisual.RenderOpen())
+      {
+        // Draw background
+        dc.DrawRectangle(new SolidColorBrush(bgColor), null, new Rect(0, 0, pixelWidth, pixelHeight));
+
+        // Paint the canvas using a VisualBrush
+        var visualBrush = new VisualBrush(canvas)
+        {
+          Stretch = Stretch.Uniform
+        };
+        dc.DrawRectangle(visualBrush, null, new Rect(0, 0, pixelWidth, pixelHeight));
+      }
+
+      // Render to bitmap
+      var renderBitmap = new RenderTargetBitmap(pixelWidth, pixelHeight, dpi, dpi, PixelFormats.Pbgra32);
+      renderBitmap.Render(drawingVisual);
+
+      // Determine encoder based on file extension
+      BitmapEncoder encoder;
+      string extension = System.IO.Path.GetExtension(filePath).ToLowerInvariant();
+      switch (extension)
+      {
+        case ".jpg":
+        case ".jpeg":
+          encoder = new JpegBitmapEncoder { QualityLevel = 95 };
+          break;
+        case ".bmp":
+          encoder = new BmpBitmapEncoder();
+          break;
+        case ".png":
+        default:
+          encoder = new PngBitmapEncoder();
+          break;
+      }
+
+      encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
+
+      using (var stream = File.Create(filePath))
+      {
+        encoder.Save(stream);
+      }
+    }
+
+    /// <summary>
+    /// Exports a FrameworkElement (Canvas, Grid, etc.) to an image file.
+    /// </summary>
+    /// <param name="element">The element to export.</param>
+    /// <param name="filePath">The file path to save the image to.</param>
+    /// <param name="customWidth">Optional custom width in pixels.</param>
+    /// <param name="customHeight">Optional custom height in pixels.</param>
+    /// <param name="dpi">DPI for the output image (default 96).</param>
+    /// <param name="backgroundColor">Background color for the image. If null, uses white.</param>
+    public static void ExportElementToImage(FrameworkElement element, string filePath,
+      int? customWidth = null, int? customHeight = null, double dpi = 96, Color? backgroundColor = null)
+    {
+      if (element == null) throw new ArgumentNullException(nameof(element));
+
+      int pixelWidth = customWidth ?? (int)element.ActualWidth;
+      int pixelHeight = customHeight ?? (int)element.ActualHeight;
+
+      if (pixelWidth <= 0 || pixelHeight <= 0)
+      {
+        pixelWidth = 1920;
+        pixelHeight = 1080;
+      }
+
+      Color bgColor = backgroundColor ?? Colors.White;
+
+      var drawingVisual = new DrawingVisual();
+      using (var dc = drawingVisual.RenderOpen())
+      {
+        dc.DrawRectangle(new SolidColorBrush(bgColor), null, new Rect(0, 0, pixelWidth, pixelHeight));
+
+        var visualBrush = new VisualBrush(element)
+        {
+          Stretch = Stretch.Uniform
+        };
+        dc.DrawRectangle(visualBrush, null, new Rect(0, 0, pixelWidth, pixelHeight));
+      }
+
+      var renderBitmap = new RenderTargetBitmap(pixelWidth, pixelHeight, dpi, dpi, PixelFormats.Pbgra32);
+      renderBitmap.Render(drawingVisual);
+
+      BitmapEncoder encoder;
+      string extension = System.IO.Path.GetExtension(filePath).ToLowerInvariant();
+      switch (extension)
+      {
+        case ".jpg":
+        case ".jpeg":
+          encoder = new JpegBitmapEncoder { QualityLevel = 95 };
+          break;
+        case ".bmp":
+          encoder = new BmpBitmapEncoder();
+          break;
+        case ".png":
+        default:
+          encoder = new PngBitmapEncoder();
+          break;
+      }
+
+      encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
+
+      using (var stream = File.Create(filePath))
+      {
+        encoder.Save(stream);
+      }
+    }
   }
 
   #endregion
