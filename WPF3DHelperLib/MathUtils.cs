@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MML;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,6 +16,34 @@ namespace WPF3DHelperLib
 
       ret.Normalize();
       return ret;
+    }
+  }
+
+  public class Vector2Repr
+  {
+    public Vector2Cartesian Pos;
+    public Vector2Cartesian Vec;
+
+    public Vector2Repr(Vector2Cartesian pos, Vector2Cartesian vec)
+    {
+      Pos = pos;
+      Vec = vec;
+    }
+  }
+
+  /// <summary>
+  /// Represents a 3D vector at a specific position in space.
+  /// Used for vector field visualization.
+  /// </summary>
+  public class Vector3Repr
+  {
+    public Vector3Cartesian Pos;
+    public Vector3Cartesian Vec;
+
+    public Vector3Repr(Vector3Cartesian pos, Vector3Cartesian vec)
+    {
+      Pos = pos;
+      Vec = vec;
     }
   }
 }
