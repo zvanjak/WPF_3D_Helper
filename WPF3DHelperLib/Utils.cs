@@ -32,13 +32,7 @@ namespace WPF3DHelperLib
 
   public class Utils
   {
-    public static Vector3D getFrom2Points(Point3D pnt1, Point3D pnt2)
-    {
-      Vector3D ret = new Vector3D(pnt2.X - pnt1.X, pnt2.Y - pnt1.Y, pnt2.Z - pnt1.Z);
 
-      ret.Normalize();
-      return ret;
-    }
 
     /// <summary>
     /// Draws a 3D coordinate system with cylindrical axes and arrow tips.

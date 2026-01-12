@@ -118,7 +118,7 @@ namespace WPF3DHelperLib
     /// </summary>
     private Vector3D GetLookDirection()
     {
-      return Utils.getFrom2Points(_cameraPos, _lookToPos);
+      return MathUtils.getFrom2Points(_cameraPos, _lookToPos);
     }
 
     /// <summary>
