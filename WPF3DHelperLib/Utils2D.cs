@@ -547,33 +547,4 @@ namespace WPF3DHelperLib
   }
 
   #endregion
-
-  #region Legacy Utils2D (for backward compatibility)
-
-  /// <summary>
-  /// Legacy 2D drawing utilities. Use CoordSystemRenderer instead.
-  /// </summary>
-  [Obsolete("Use CoordSystemRenderer.Draw() instead")]
-  public static class Utils2D
-  {
-    /// <summary>
-    /// Draws a point on the canvas.
-    /// </summary>
-    public static void DrawPoint(Canvas mainCanvas, CoordSystemParams coordSysParams, double x, double y, Color inColor)
-    {
-      var point = CoordTransform.WorldToScreen(x, y, coordSysParams);
-
-      Ellipse circle = new Ellipse
-      {
-        Width = 5,
-        Height = 5,
-        Fill = new SolidColorBrush(inColor)
-      };
-      mainCanvas.Children.Add(circle);
-      Canvas.SetLeft(circle, point.X - 2.5);
-      Canvas.SetTop(circle, point.Y - 2.5);
-    }
-  }
-
-  #endregion
 }
