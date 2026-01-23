@@ -1,6 +1,7 @@
 using System;
 using System.Windows.Media.Media3D;
 using MML;
+using MML.Base;
 
 namespace WPF3DHelperLib
 {
