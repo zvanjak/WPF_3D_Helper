@@ -656,51 +656,87 @@ namespace WPF3DHelperLib
 
     /// <summary>
     /// Gets two perpendicular vectors to the given direction.
+    /// Uses cross-product approach for robustness.
     /// </summary>
     private static (Vector3Cartesian, Vector3Cartesian) GetPerpendicularVectors(Vector3Cartesian direction)
     {
-      Vector3Cartesian v2, v3;
-
-      if (Math.Abs(direction.X) > Math.Abs(direction.Y) && Math.Abs(direction.X) > Math.Abs(direction.Z))
+      // Normalize the direction
+      double norm = direction.Norm();
+      if (norm < 1e-10)
       {
-        v2 = direction.Y == 0 ? new Vector3Cartesian(0, 1, 0) : new Vector3Cartesian(0, Math.Sign(direction.Y), 0);
-        v3 = direction.Z == 0 ? new Vector3Cartesian(0, 0, 1) : new Vector3Cartesian(0, 0, Math.Sign(direction.Z));
+        // Fallback for zero direction
+        return (new Vector3Cartesian(1, 0, 0), new Vector3Cartesian(0, 1, 0));
       }
-      else if (Math.Abs(direction.Y) > Math.Abs(direction.X) && Math.Abs(direction.Y) > Math.Abs(direction.Z))
+      
+      Vector3Cartesian tangent = direction / norm;
+      
+      // Choose a reference vector that is NOT parallel to the tangent
+      // Pick the axis that is most perpendicular to the tangent
+      Vector3Cartesian reference;
+      double absX = Math.Abs(tangent.X);
+      double absY = Math.Abs(tangent.Y);
+      double absZ = Math.Abs(tangent.Z);
+      
+      if (absX <= absY && absX <= absZ)
       {
-        v2 = direction.X == 0 ? new Vector3Cartesian(1, 0, 0) : new Vector3Cartesian(Math.Sign(direction.X), 0, 0);
-        v3 = direction.Z == 0 ? new Vector3Cartesian(0, 0, 1) : new Vector3Cartesian(0, 0, Math.Sign(direction.Z));
+        // X component is smallest, use X axis as reference
+        reference = new Vector3Cartesian(1, 0, 0);
+      }
+      else if (absY <= absX && absY <= absZ)
+      {
+        // Y component is smallest, use Y axis as reference
+        reference = new Vector3Cartesian(0, 1, 0);
       }
       else
       {
-        v2 = direction.X == 0 ? new Vector3Cartesian(1, 0, 0) : new Vector3Cartesian(Math.Sign(direction.X), 0, 0);
-        v3 = direction.Y == 0 ? new Vector3Cartesian(0, 1, 0) : new Vector3Cartesian(0, Math.Sign(direction.Y), 0);
+        // Z component is smallest, use Z axis as reference
+        reference = new Vector3Cartesian(0, 0, 1);
       }
-
+      
+      // Compute first perpendicular vector using cross product
+      Vector3Cartesian v2 = Vector3Cartesian.VectorProd(tangent, reference);
+      double v2Norm = v2.Norm();
+      if (v2Norm < 1e-10)
+      {
+        // Fallback - should rarely happen
+        return (new Vector3Cartesian(1, 0, 0), new Vector3Cartesian(0, 1, 0));
+      }
+      v2 = v2 / v2Norm;
+      
+      // Compute second perpendicular vector using cross product
+      Vector3Cartesian v3 = Vector3Cartesian.VectorProd(tangent, v2);
+      double v3Norm = v3.Norm();
+      if (v3Norm > 1e-10)
+      {
+        v3 = v3 / v3Norm;
+      }
+      
       return (v2, v3);
     }
 
     /// <summary>
     /// Adds a ring of vertices for tube generation.
+    /// The ring is placed perpendicular to the tangent direction (n1).
+    /// n2 and n3 are the perpendicular basis vectors in the plane of the ring.
     /// </summary>
     private static void AddTubeRing(MeshGeometry3D mesh, Vector3Cartesian center,
                                      Vector3Cartesian n1, Vector3Cartesian n2, Vector3Cartesian n3,
                                      double radius, int numDivs)
     {
-      Vector3Cartesian w1 = new Vector3Cartesian(n1.X, n2.X, n3.X);
-      Vector3Cartesian w2 = new Vector3Cartesian(n1.Y, n2.Y, n3.Y);
-      Vector3Cartesian w3 = new Vector3Cartesian(n1.Z, n2.Z, n3.Z);
-
+      // n1 is the tangent (along the tube), n2 and n3 span the perpendicular plane
+      // Generate circle points in the plane spanned by n2 and n3
       for (int i = 0; i < numDivs; i++)
       {
         double angle = 2 * Math.PI * i / numDivs;
-        Vector3Cartesian localVec = new Vector3Cartesian(radius * Math.Cos(angle), radius * Math.Sin(angle), 0);
+        double cosA = Math.Cos(angle);
+        double sinA = Math.Sin(angle);
+        
+        // Point on circle: center + radius * (cos(angle) * n2 + sin(angle) * n3)
+        double px = center.X + radius * (cosA * n2.X + sinA * n3.X);
+        double py = center.Y + radius * (cosA * n2.Y + sinA * n3.Y);
+        double pz = center.Z + radius * (cosA * n2.Z + sinA * n3.Z);
 
-        double newx = Vector3Cartesian.ScalProd(localVec, w2);
-        double newy = Vector3Cartesian.ScalProd(localVec, w3);
-        double newz = Vector3Cartesian.ScalProd(localVec, w1);
-
-        mesh.Positions.Add(new Point3D(center.X + newx, center.Y + newy, center.Z + newz));
+        mesh.Positions.Add(new Point3D(px, py, pz));
       }
     }
 
