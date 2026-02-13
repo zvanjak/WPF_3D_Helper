@@ -176,6 +176,37 @@ namespace WPF3DHelperLib
     }
 
     /// <summary>
+    /// Sets the camera to look at a specific point and uses it as the orbit center.
+    /// The camera position remains unchanged, only the view direction is updated.
+    /// </summary>
+    /// <param name="targetPoint">The point to look at (will become orbit center).</param>
+    public void LookAtPoint(Point3D targetPoint)
+    {
+      _lookToPos = targetPoint;
+      
+      // Calculate yaw and pitch to look at the target
+      CalculateYawPitchFromLookAt();
+      
+      // Update camera look direction
+      _myCamera.LookDirection = GetLookDirectionFromAngles();
+      
+      // Update orbit distance based on distance to target
+      Vector3D toTarget = new Vector3D(
+        _lookToPos.X - _cameraPos.X,
+        _lookToPos.Y - _cameraPos.Y,
+        _lookToPos.Z - _cameraPos.Z);
+      OrbitDistance = toTarget.Length;
+    }
+
+    /// <summary>
+    /// Sets the camera to look at the origin (0, 0, 0) and uses it as the orbit center.
+    /// </summary>
+    public void LookAtOrigin()
+    {
+      LookAtPoint(new Point3D(0, 0, 0));
+    }
+
+    /// <summary>
     /// Calculates yaw and pitch angles from camera position to look-at point.
     /// </summary>
     private void CalculateYawPitchFromLookAt()
