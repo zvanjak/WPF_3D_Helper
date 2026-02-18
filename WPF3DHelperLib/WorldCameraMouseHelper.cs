@@ -67,9 +67,13 @@ namespace WPF3DHelperLib
     private double _startPitch;
 
     // Orbit mode state
-    private Point3D _orbitCenterPoint;      // The point we orbit around
+    private Point3D _orbitCenterPoint;      // Snapshot of orbit center during drag
     private Point3D _startCameraPosLButtonClick;
     private double _orbitDistance;          // Distance from camera to orbit center
+
+    // Persistent orbit target — remembered between interactions
+    private Point3D _orbitTarget;           // The persistent orbit center point
+    private Point3D _initialOrbitTarget;    // For reset
 
     // Camera constraints
     private const double MinFov = 10.0;   // Maximum zoom in
@@ -83,6 +87,17 @@ namespace WPF3DHelperLib
     /// When orbiting, the camera rotates around a point this far along the view direction.
     /// </summary>
     public double OrbitDistance { get; set; } = 200.0;
+
+    /// <summary>
+    /// Gets or sets the persistent orbit target point.
+    /// The camera orbits around this point during left-mouse-drag.
+    /// Co-translates during WASD/QE movement, co-rotates during free-look.
+    /// </summary>
+    public Point3D OrbitTarget
+    {
+      get => _orbitTarget;
+      set => _orbitTarget = value;
+    }
 
     /// <summary>
     /// Gets or sets the movement speed for keyboard navigation.
@@ -130,6 +145,10 @@ namespace WPF3DHelperLib
       _myCamera.LookDirection = GetLookDirectionFromAngles();
       _myCamera.UpDirection = new Vector3D(0, 0, 1);
       _myCamera.FieldOfView = _initialFov;
+
+      // Initialize persistent orbit target to look-at point
+      _orbitTarget = _lookToPos;
+      _initialOrbitTarget = _lookToPos;
     }
 
     /// <summary>
@@ -151,6 +170,10 @@ namespace WPF3DHelperLib
         _lookToPos.Y - _cameraPos.Y,
         _lookToPos.Z - _cameraPos.Z);
       OrbitDistance = toTarget.Length;
+
+      // Set persistent orbit target
+      _orbitTarget = inLookAtPnt;
+      _initialOrbitTarget = inLookAtPnt;
     }
 
     /// <summary>
@@ -160,6 +183,7 @@ namespace WPF3DHelperLib
     {
       _cameraPos = _initialCameraPos;
       _lookToPos = _initialLookToPos;
+      _orbitTarget = _initialOrbitTarget;
       _yaw = _initialYaw;
       _pitch = _initialPitch;
       _myCamera.Position = _cameraPos;
@@ -190,12 +214,13 @@ namespace WPF3DHelperLib
       // Update camera look direction
       _myCamera.LookDirection = GetLookDirectionFromAngles();
       
-      // Update orbit distance based on distance to target
+      // Update orbit distance and persistent orbit target
       Vector3D toTarget = new Vector3D(
         _lookToPos.X - _cameraPos.X,
         _lookToPos.Y - _cameraPos.Y,
         _lookToPos.Z - _cameraPos.Z);
       OrbitDistance = toTarget.Length;
+      _orbitTarget = targetPoint;
     }
 
     /// <summary>
@@ -266,9 +291,12 @@ namespace WPF3DHelperLib
       _startMouseLButtonClick = mousePos;
       _startCameraPosLButtonClick = _cameraPos;
       
-      // Calculate the virtual orbit center at the moment of click
-      _orbitCenterPoint = GetVirtualOrbitCenter();
-      _orbitDistance = OrbitDistance;
+      // Use persistent orbit target as orbit center
+      _orbitCenterPoint = _orbitTarget;
+      _orbitDistance = (new Vector3D(
+        _orbitTarget.X - _cameraPos.X,
+        _orbitTarget.Y - _cameraPos.Y,
+        _orbitTarget.Z - _cameraPos.Z)).Length;
       
       // Store starting angles
       _startYaw = _yaw;
@@ -399,6 +427,18 @@ namespace WPF3DHelperLib
 
       // Update camera look direction
       _myCamera.LookDirection = GetLookDirectionFromAngles();
+
+      // Co-rotate orbit target around camera to stay in front
+      double dist = (new Vector3D(
+        _orbitTarget.X - _cameraPos.X,
+        _orbitTarget.Y - _cameraPos.Y,
+        _orbitTarget.Z - _cameraPos.Z)).Length;
+      if (dist < 0.001) dist = OrbitDistance;  // Fallback if degenerate
+      Vector3D newLookDir = GetLookDirectionFromAngles();
+      _orbitTarget = new Point3D(
+        _cameraPos.X + newLookDir.X * dist,
+        _cameraPos.Y + newLookDir.Y * dist,
+        _cameraPos.Z + newLookDir.Z * dist);
     }
 
     /// <summary>
@@ -512,11 +552,15 @@ namespace WPF3DHelperLib
           return;
       }
 
-      // Update camera position
+      // Update camera position and co-translate orbit target
       _cameraPos = new Point3D(
         _cameraPos.X + moveDirection.X,
         _cameraPos.Y + moveDirection.Y,
         _cameraPos.Z + moveDirection.Z);
+      _orbitTarget = new Point3D(
+        _orbitTarget.X + moveDirection.X,
+        _orbitTarget.Y + moveDirection.Y,
+        _orbitTarget.Z + moveDirection.Z);
 
       _myCamera.Position = _cameraPos;
 
